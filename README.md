@@ -1,3 +1,3 @@
 Team Members:
 Alex Beuerle
-Sayim Shazlee
+Sayim Shazlee 
