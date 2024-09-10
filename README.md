@@ -7,6 +7,6 @@ Dhruv Chaudhary
 
 Instructions to run:
 1) Clone Project
-2) ./run install //to get neccesary dependacies
+2) ./run install //to get neccesary dependacies (try "npm run build" if not working at first)
 3) ./run URL //(Proviced URL is a github or npm repository)
 4) ./run test //Not implemented yet
