@@ -6,6 +6,7 @@ import axios from 'axios';
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
 const PER_PAGE = 100; // GitHub API truncates certain number of contributors
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
 
 // Function to fetch the total number of contributors for a GitHub repository
 export async function getGithubContributors(url: string): Promise<number> {
@@ -142,4 +143,98 @@ export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: 
   console.log(`Total SLOC: ${totalSloc}, Total Comments: ${totalComments}, Comment-to-SLOC Ratio: ${ratio.toFixed(2)}`);
 
   return { sloc: totalSloc, comments: totalComments, ratio }; // Return the calculated metric
+}
+
+
+export async function checkLicenseCompatibility(url: string): Promise<{ score: number, details: string }> {
+  console.log('Checking license compatibility for:', url);
+
+  if (!GITHUB_TOKEN) {
+    console.error('GitHub token is not set. Please set the GITHUB_TOKEN environment variable.');
+    return { score: 0, details: 'GitHub token not set' };
+  }
+
+  const headers = {
+    'Accept': 'application/vnd.github.v3+json',
+    'Authorization': `token ${GITHUB_TOKEN}`,
+    'User-Agent': 'Your-App-Name'
+  };
+
+  try {
+    let repoPath;
+    if (url.startsWith('https://www.npmjs.com/package/')) {
+      const packageName = url.replace('https://www.npmjs.com/package/', '');
+      const npmResponse = await axios.get(`${NPM_REGISTRY_URL}${packageName}`);
+      const repository = npmResponse.data.repository;
+      if (repository && repository.url) {
+        repoPath = repository.url
+          .replace('git+https://github.com/', '')
+          .replace('git://github.com/', '')
+          .replace('https://github.com/', '')
+          .replace('.git', '');
+      } else {
+        return { score: 0, details: 'No GitHub repository found for npm package' };
+      }
+    } else {
+      repoPath = url.replace('https://github.com/', '');
+    }
+
+    let licenseInfo = '';
+
+    // Check LICENSE file
+    try {
+      const licenseResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/LICENSE`, { headers });
+      licenseInfo = Buffer.from(licenseResponse.data.content, 'base64').toString('utf-8');
+    } catch (error) {
+      console.log('LICENSE file not found, checking package.json');
+      
+      // Check package.json
+      try {
+        const packageJsonResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/package.json`, { headers });
+        const packageJsonContent = JSON.parse(Buffer.from(packageJsonResponse.data.content, 'base64').toString('utf-8'));
+        licenseInfo = packageJsonContent.license || '';
+      } catch (error) {
+        console.log('package.json not found or does not contain license information');
+      }
+    }
+
+    // If still no license info, check README
+    if (!licenseInfo) {
+      const readmeResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/readme`, { headers });
+      const readmeContent = Buffer.from(readmeResponse.data.content, 'base64').toString('utf-8');
+      licenseInfo = extractLicenseFromReadme(readmeContent) || '';
+    }
+
+    if (licenseInfo) {
+      const compatible = isCompatibleWithLGPLv2_1(licenseInfo);
+      return {
+        score: compatible ? 1 : 0,
+        details: `License found: ${licenseInfo.split('\n')[0]}. Compatible: ${compatible}`
+      };
+    }
+
+    return { score: 0, details: 'No license information found' };
+  } catch (error: any) {
+    console.error(`Error checking license: ${error.message}`);
+    return { score: 0, details: `Error checking license: ${error.message}` };
+  }
+}
+
+function extractLicenseFromReadme(content: string): string | null {
+  const licenseRegex = /#+\s*License\s*([\s\S]*?)(?=#+|$)/i;
+  const match = content.match(licenseRegex);
+  return match ? match[1].trim() : null;
+}
+
+function isCompatibleWithLGPLv2_1(licenseText: string): boolean {
+  const compatibleLicenses = [
+    'LGPL-2.1', 'LGPL-3.0',
+    'GPL-2.0', 'GPL-3.0',
+    'MIT', 'BSD-2-Clause', 'BSD-3-Clause',
+    'Apache-2.0', 'ISC', 'Unlicense'
+  ];
+  return compatibleLicenses.some(license => 
+    licenseText.toLowerCase().includes(license.toLowerCase()) ||
+    licenseText.toLowerCase().includes(license.toLowerCase().replace('-', ' '))
+  );
 }
