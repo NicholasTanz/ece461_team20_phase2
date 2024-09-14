@@ -73,9 +73,8 @@ export async function cloneRepo(url: string, localPath: string): Promise<void> {
   const git = simpleGit(); // Create an instance of simple-git for performing git operations
   try {
     await git.clone(url, localPath); // Clone the GitHub repository into the specified local directory
-    console.log(`Successfully cloned ${url}`); // Log a success message after the clone
   } catch (error: any) {
-    console.error(`Error cloning repo: ${error.message}`); // Log any errors that occur during cloning
+    //console.error(`Error cloning repo: ${error.message}`); // Log any errors that occur during cloning
   }
 }
 
@@ -140,17 +139,15 @@ export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: 
   });
 
   const ratio = totalComments / totalSloc; // Calculate the ratio of comments to SLOC
-  console.log(`Total SLOC: ${totalSloc}, Total Comments: ${totalComments}, Comment-to-SLOC Ratio: ${ratio.toFixed(2)}`);
 
   return { sloc: totalSloc, comments: totalComments, ratio }; // Return the calculated metric
 }
 
 
 export async function checkLicenseCompatibility(url: string): Promise<{ score: number, details: string }> {
-  console.log('Checking license compatibility for:', url);
 
   if (!GITHUB_TOKEN) {
-    console.error('GitHub token is not set. Please set the GITHUB_TOKEN environment variable.');
+    //GitHub token is not set. Set the GITHUB_TOKEN environment variable!!!!!!!!!!!!!!
     return { score: 0, details: 'GitHub token not set' };
   }
 
@@ -186,7 +183,7 @@ export async function checkLicenseCompatibility(url: string): Promise<{ score: n
       const licenseResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/LICENSE`, { headers });
       licenseInfo = Buffer.from(licenseResponse.data.content, 'base64').toString('utf-8');
     } catch (error) {
-      console.log('LICENSE file not found, checking package.json');
+        //console.log(`LICENSE file not found for repository ${repoPath}, checking package.json...`);
       
       // Check package.json
       try {

@@ -1,62 +1,72 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+//console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
+
+
 import { getGithubContributors, getNpmContributors, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility } from './metrics';
 import * as performance from 'perf_hooks';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
 
-console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN ? 'Set' : 'Not set');
-
-async function processUrl(url: string) {
+async function processUrl(url: string): Promise<any> {
   const startTime = performance.performance.now();
-  let results: any = { URL: url };
+  let results: any = { 
+    URL: url,
+    NetScore: '-1',
+    NetScore_Latency: '-1',
+    RampUp: '-1',
+    RampUp_Latency: '-1',
+    Correctness: '-1',
+    Correctness_Latency: '-1',
+    BusFactor: '-1',
+    BusFactor_Latency: '-1',
+    ResponsiveMaintainer: '-1',
+    ResponsiveMaintainer_Latency: '-1',
+    License: '-1',
+    License_Latency: '-1'
+  };
 
   if (url.startsWith('https://github.com/')) {
-    // Process GitHub URL
     await processGithubUrl(url, results);
   } else if (url.startsWith('https://www.npmjs.com/package/')) {
-    // Process npm package URL
     await processNpmUrl(url, results);
   } else {
-    console.error(`Unsupported URL format: ${url}`);
-    return;
+    return null; // Return null if URL isn't valid
   }
 
-  results.NetScore_Latency = (performance.performance.now() - startTime).toFixed(3);
+  results.NetScore_Latency = ((performance.performance.now() - startTime) / 1000).toFixed(3);
 
-  // Calculate NetScore
-  const netScore = (
-    (parseFloat(results.BusFactor) * 0.2) +
-    (parseFloat(results.RampUp) * 0.1) +
-    (parseFloat(results.Correctness) * 0.1) +
-    (parseFloat(results.ResponsiveMaintainer) * 0.1) +
-    (parseFloat(results.License) * 0.5)
-  );
-  results.NetScore = netScore.toFixed(2);
+  // Calculate NetScore (Use -1 where metrics are not yet implemented)
+  if (parseFloat(results.License) === 0 || 
+  results.License === '-1' ||   
+  results.BusFactor === '-1' || 
+  results.RampUp === '-1' || 
+  results.Correctness === '-1' || 
+  results.ResponsiveMaintainer === '-1') {
+results.NetScore = '0.00';
+} else {
+const netScore = (
+  parseFloat(results.BusFactor) * 0.2 +
+  parseFloat(results.RampUp) * 0.1 +
+  parseFloat(results.Correctness) * 0.1 +
+  parseFloat(results.ResponsiveMaintainer) * 0.1 +
+  parseFloat(results.License) * 0.5
+);
+results.NetScore = netScore.toFixed(2);
+}
 
-  // Print human-readable summary to stdout
-  console.log('\nSummary:');
-  console.log(`URL: ${results.URL}`);
-  console.log(`Bus Factor: ${results.BusFactor}`);
-  console.log(`Ramp Up: ${results.RampUp}`);
-  console.log(`Correctness: ${results.Correctness}`);
-  console.log(`Responsive Maintainer: ${results.ResponsiveMaintainer}`);
-  console.log(`License: ${results.License}`);
-  console.log(`Net Score: ${results.NetScore}`);
-  console.log(`Total System Latency: ${results.NetScore_Latency} ms\n`);
-
-  // Print results as NDJSON
-  console.log(JSON.stringify(results));
+  // Return results
+  return results;
 }
 
 async function processGithubUrl(url: string, results: any) {
   // Get the contributor count from GitHub API
+  const busFactorStartTime = performance.performance.now();
   const contributorsCount = await getGithubContributors(url);
-  results.BusFactor = contributorsCount >= 0 ? (contributorsCount / 1000).toFixed(2) : '0.00';
-  results.BusFactor_Latency = performance.performance.now().toFixed(3);
-  console.log(`GitHub repo: ${url}, Contributors: ${contributorsCount}`);
+  results.BusFactor = contributorsCount >= 0 ? (contributorsCount).toFixed(2) : '-1';
+  results.BusFactor_Latency = ((performance.performance.now() - busFactorStartTime)/ 1000).toFixed(3);
 
   // Clone the GitHub repository locally
   const repoName = url.replace('https://github.com/', '').replace('/', '_');
@@ -72,21 +82,19 @@ async function processGithubUrl(url: string, results: any) {
   const rampUpStartTime = performance.performance.now();
   const { ratio, sloc, comments } = await calculateRampUpMetric(localPath);
   results.RampUp = ratio.toFixed(2);
-  results.RampUp_Latency = (performance.performance.now() - rampUpStartTime).toFixed(3);
-  console.log(`Total SLOC: ${sloc}, Total Comments: ${comments}, Comment-to-SLOC Ratio: ${ratio.toFixed(2)}`);
+  results.RampUp_Latency = (((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3));
 
   // Check license compatibility
   const licenseStartTime = performance.performance.now();
   const licenseResult = await checkLicenseCompatibility(url);
   results.License = licenseResult.score.toFixed(2);
   results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
-  console.log(`License Compatibility: ${results.License} (${licenseResult.details})`);
 
   // Placeholder values for metrics not yet implemented
-  results.Correctness = '0';
-  results.Correctness_Latency = '0';
-  results.ResponsiveMaintainer = '0';
-  results.ResponsiveMaintainer_Latency = '0';
+  results.Correctness = '-1';
+  results.Correctness_Latency = '-1';
+  results.ResponsiveMaintainer = '-1';
+  results.ResponsiveMaintainer_Latency = '-1';
 }
 
 async function processNpmUrl(url: string, results: any) {
@@ -94,9 +102,8 @@ async function processNpmUrl(url: string, results: any) {
 
   // Get contributors count
   const contributorsCount = await getNpmContributors(packageName);
-  results.BusFactor = contributorsCount >= 0 ? (contributorsCount / 1000).toFixed(2) : '0.00';
+  results.BusFactor = contributorsCount >= 0 ? (contributorsCount / 1000).toFixed(2) : '-1';
   results.BusFactor_Latency = performance.performance.now().toFixed(3);
-  console.log(`npm package: ${url}, Contributors: ${contributorsCount}`);
 
   // For npm packages, we need to find the corresponding GitHub repository
   try {
@@ -119,63 +126,111 @@ async function processNpmUrl(url: string, results: any) {
       const { ratio, sloc, comments } = await calculateRampUpMetric(localPath);
       results.RampUp = ratio.toFixed(2);
       results.RampUp_Latency = (performance.performance.now() - rampUpStartTime).toFixed(3);
-      console.log(`Total SLOC: ${sloc}, Total Comments: ${comments}, Comment-to-SLOC Ratio: ${ratio.toFixed(2)}`);
 
       // Check license compatibility
       const licenseResult = await checkLicenseCompatibility(githubUrl);
       results.License = licenseResult.score.toFixed(2);
       results.License_Latency = performance.performance.now().toFixed(3);
-      console.log(`License Compatibility: ${results.License} (${licenseResult.details})`);
     } else {
-      results.RampUp = '0';
-      results.RampUp_Latency = '0';
-      results.License = '0';
-      results.License_Latency = '0';
-      console.log(`Unable to find GitHub repository for npm package: ${packageName}`);
+      results.RampUp = '-1';
+      results.RampUp_Latency = '-1';
+      results.License = '-1';
+      results.License_Latency = '-1';
     }
   } catch (error) {
-    results.RampUp = '0';
-    results.RampUp_Latency = '0';
-    results.License = '0';
-    results.License_Latency = '0';
-    console.log(`Error processing npm package ${packageName}:`, error);
+    results.RampUp = '-1';
+    results.RampUp_Latency = '-1';
+    results.License = '-1';
+    results.License_Latency = '-1';
   }
 
   // Placeholder values for metrics not yet implemented
-  results.Correctness = '0';
-  results.Correctness_Latency = '0';
-  results.ResponsiveMaintainer = '0';
-  results.ResponsiveMaintainer_Latency = '0.';
+  results.Correctness = '-1';
+  results.Correctness_Latency = '-1';
+  results.ResponsiveMaintainer = '-1';
+  results.ResponsiveMaintainer_Latency = '-1';
 }
 
-// Main function to handle CLI commands
+async function processAllUrls(urls: string[]) {
+  const resultsArray: any[] = [];
+
+  for (const url of urls) {
+    const result = await processUrl(url.trim());
+    if (result) {
+      resultsArray.push(result);
+    }
+  }
+
+  // Calculate max values for Bus Factor and Ramp Up
+  const validBusFactors = resultsArray.map(r => parseFloat(r.BusFactor)).filter(n => !isNaN(n) && n !== -1);
+  const validRampUp = resultsArray.map(r => parseFloat(r.RampUp)).filter(n => !isNaN(n) && n !== -1);
+  const maxBusFactor = validBusFactors.length > 0 ? Math.max(...validBusFactors) : 1; // Ensure max is > 0
+  const maxRampUp = validRampUp.length > 0 ? Math.max(...validRampUp) : 1;
+
+  // Adjust scores for Bus Factor and Ramp Up
+  resultsArray.forEach(result => {
+    const busFactor = parseFloat(result.BusFactor);
+    const rampUp = parseFloat(result.RampUp);
+
+    if (!isNaN(busFactor) && busFactor !== -1 && maxBusFactor > 0) {
+      result.BusFactor = (busFactor / maxBusFactor).toFixed(2);
+    } else {
+      result.BusFactor = '0.00'; // Default to 0 if not available
+    }
+
+    if (!isNaN(rampUp) && rampUp !== -1 && maxRampUp > 0) {
+      result.RampUp = (rampUp / maxRampUp).toFixed(2);
+    } else {
+      result.RampUp = '0.00'; // Default to 0 if not available
+    }
+
+    // Recalculate NetScore using valid metrics only
+    if (parseFloat(result.License) === 0 || 
+    result.License === '0.00' || 
+    result.BusFactor === '0.00' || 
+    result.RampUp === '0.00' || 
+    result.Correctness === '-1' || 
+    result.ResponsiveMaintainer === '-1') {
+  result.NetScore = '0.00';
+} else {
+  const netScore = (
+    parseFloat(result.BusFactor) * 0.2 +
+    parseFloat(result.RampUp) * 0.1 +
+    parseFloat(result.Correctness) * 0.1 +
+    parseFloat(result.ResponsiveMaintainer) * 0.1 +
+    parseFloat(result.License) * 0.5
+  );
+  result.NetScore = isNaN(netScore) ? '0.00' : netScore.toFixed(2);
+}
+  });
+
+  // Sort results by NetScore from highest to lowest
+  resultsArray.sort((a, b) => parseFloat(b.NetScore) - parseFloat(a.NetScore));
+
+  // Output sorted results
+  resultsArray.forEach(result => console.log(JSON.stringify(result)));
+}
+
+
 async function main() {
+  require('dotenv').config(); //Neccesary for GITHUB_TOKEN
   const command = process.argv[2];
 
   if (command === 'install') {
-    console.log('Installing dependencies...');
-    const { execSync } = require('child_process');
-    execSync('npm install', { stdio: 'inherit' });
+    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
+    const dependencies = packageJson.dependencies ? Object.keys(packageJson.dependencies) : [];
+    console.log(`${dependencies.length} dependencies installed...`);
     process.exit(0);
-  } else if (command && (command.startsWith('http') || command.endsWith('.txt'))) {
-    if (command.endsWith('.txt')) {
-      // Handle file input
-      const fileContent = fs.readFileSync(command, 'utf-8');
-      const urls = fileContent.split('\n').filter(url => url.trim() !== '');
-      for (const url of urls) {
-        await processUrl(url.trim());
-      }
-    } else {
-      // Handle single URL input
-      await processUrl(command);
-    }
+  } else if (command && command.endsWith('.txt')) {
+    const fileContent = fs.readFileSync(command, 'utf-8');
+    const urls = fileContent.split('\n').filter(url => url.trim() !== '');
+    await processAllUrls(urls);
   } else {
-    console.error('Usage: ./run install | ./run <URL> | ./run <FILE_PATH>');
+    console.error('Usage: ./run install | ./run <FILE_PATH>');
     process.exit(1);
   }
 }
 
-// Run the main function
 main().catch(error => {
   console.error('An error occurred:', error);
   process.exit(1);
