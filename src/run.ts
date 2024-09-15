@@ -98,51 +98,74 @@ async function processGithubUrl(url: string, results: any) {
 }
 
 async function processNpmUrl(url: string, results: any) {
+  const startTime = performance.performance.now(); // Start time for npm processing
   const packageName = url.replace('https://www.npmjs.com/package/', '');
 
-  // Get contributors count
-  const contributorsCount = await getNpmContributors(packageName);
-  results.BusFactor = contributorsCount >= 0 ? (contributorsCount / 1000).toFixed(2) : '-1';
-  results.BusFactor_Latency = performance.performance.now().toFixed(3);
-
-  // For npm packages, we need to find the corresponding GitHub repository
   try {
+    // Fetch package data from the npm registry
+    const npmStartTime = performance.performance.now();
     const npmResponse = await axios.get(`https://registry.npmjs.org/${packageName}`);
     const repository = npmResponse.data.repository;
+    results.BusFactor_Latency = ((performance.performance.now() - npmStartTime) / 1000).toFixed(3);
+
+    // Get contributors count
+    const contributorsStartTime = performance.performance.now();
+    const contributorsCount = await getNpmContributors(packageName);
+    results.BusFactor = contributorsCount >= 0 ? (contributorsCount).toFixed(2) : '-1';
+    results.BusFactor_Latency = ((performance.performance.now() - contributorsStartTime) / 1000).toFixed(3);
+
     if (repository && repository.url) {
-      const githubUrl = repository.url.replace('git+', '').replace('.git', '');
-      
-      // Calculate Ramp Up metric
+      let githubUrl = repository.url;
+
+      // Clean up the URL if it starts with 'git+', '.git', or 'ssh://git@github.com'
+      githubUrl = githubUrl.replace('git+', '').replace('.git', '');
+      githubUrl = githubUrl.replace('ssh://git@github.com', 'https://github.com');
+
+      // Ensure the URL is a valid HTTPS URL
+      if (!githubUrl.startsWith('https://')) {
+        githubUrl = `https://${githubUrl}`;
+      }
+
+      // Continue with the rest of your code: cloning repo, calculating metrics, etc.
       const repoName = githubUrl.replace('https://github.com/', '').replace('/', '_');
       const localPath = path.join(__dirname, '..', 'repos', repoName);
-      
+
       // Ensure the repos directory exists
       if (!fs.existsSync(localPath)) {
         fs.mkdirSync(path.join(__dirname, '..', 'repos'), { recursive: true });
       }
-      
+
+      const cloneStartTime = performance.performance.now();
       await cloneRepo(githubUrl, localPath);
+      results.RampUp_Latency = ((performance.performance.now() - cloneStartTime) / 1000).toFixed(3);
+
       const rampUpStartTime = performance.performance.now();
       const { ratio, sloc, comments } = await calculateRampUpMetric(localPath);
       results.RampUp = ratio.toFixed(2);
-      results.RampUp_Latency = (performance.performance.now() - rampUpStartTime).toFixed(3);
+      results.RampUp_Latency = ((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3);
 
-      // Check license compatibility
+      const licenseStartTime = performance.performance.now();
       const licenseResult = await checkLicenseCompatibility(githubUrl);
       results.License = licenseResult.score.toFixed(2);
-      results.License_Latency = performance.performance.now().toFixed(3);
+      results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
+
     } else {
+      // Handle missing repository field
+      console.error(`No repository field found for npm package ${packageName}`);
       results.RampUp = '-1';
       results.RampUp_Latency = '-1';
       results.License = '-1';
       results.License_Latency = '-1';
     }
   } catch (error) {
+    console.error(`Error processing npm package ${packageName}:`, error);
     results.RampUp = '-1';
     results.RampUp_Latency = '-1';
     results.License = '-1';
     results.License_Latency = '-1';
   }
+
+  results.NetScore_Latency = ((performance.performance.now() - startTime) / 1000).toFixed(3);
 
   // Placeholder values for metrics not yet implemented
   results.Correctness = '-1';
@@ -150,6 +173,8 @@ async function processNpmUrl(url: string, results: any) {
   results.ResponsiveMaintainer = '-1';
   results.ResponsiveMaintainer_Latency = '-1';
 }
+
+
 
 async function processAllUrls(urls: string[]) {
   const resultsArray: any[] = [];

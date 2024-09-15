@@ -10,6 +10,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token f
 
 // Function to fetch the total number of contributors for a GitHub repository
 export async function getGithubContributors(url: string): Promise<number> {
+  //console.log(`Analyzying URL ${url}------1:`);
   const repoPath = url.replace('https://github.com/', ''); // Extract the repository path from the provided GitHub URL
   let totalContributors = 0;
   let page = 1; // Start with the first page of results as github APO truncates to 100 users per page
@@ -36,6 +37,8 @@ export async function getGithubContributors(url: string): Promise<number> {
 
       page++; // Increment the page number to fetch the next set of contributors
     }
+    //console.log(`\nModule ${repoPath} has ${totalContributors} contributors!!!!!!!!!!!!!!!!!\n`);
+    console.error(`Success fetching contributors for GitHub repo ${url}`);
     return totalContributors; // Return the total number of contributors
   } catch (error: any) {
     // Handle any errors that occur during the API request
@@ -53,9 +56,12 @@ export async function getNpmContributors(packageName: string): Promise<number> {
 
     // Check if the npm package has a GitHub repository link
     if (repository && repository.type === 'git' && repository.url) {
-      const repoUrl = repository.url.replace(/^git\+/, ''); // Remove any "git+" prefix from the repository URL
+      let repoUrl = repository.url.replace(/^git\+/, '') // Remove any "git+" prefix from the repository URL
+                                  .replace(/^ssh:\/\//, 'https://') // Fix ssh URL to https
+                                  .replace(/^https:\/\/git@github.com\//, 'https://github.com/') // Fix incorrect URL starting with "https://git@github.com/"
+                                  .replace(/^git\+ssh:\/\//, 'https://'); // Handle git+ssh
+
       const formattedUrl = repoUrl.replace(/\.git$/, ''); // Remove the ".git" suffix from the URL
-      //All npm repostiroes have a github repo available
       return getGithubContributors(formattedUrl); // Reuse the GitHub function to fetch contributors
     } else {
       console.log(`npm package: ${packageName} - Repository information not available.`);
@@ -67,6 +73,9 @@ export async function getNpmContributors(packageName: string): Promise<number> {
     return -1; // Return -1 to indicate failure
   }
 }
+
+
+
 
 // Function to clone a GitHub repository locally using simple-git
 export async function cloneRepo(url: string, localPath: string): Promise<void> {
