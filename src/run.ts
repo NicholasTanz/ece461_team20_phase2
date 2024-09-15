@@ -5,6 +5,7 @@ dotenv.config();
 
 
 import { getGithubContributors, getNpmContributors, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility } from './metrics';
+import { test } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -250,6 +251,11 @@ async function main() {
     const fileContent = fs.readFileSync(command, 'utf-8');
     const urls = fileContent.split('\n').filter(url => url.trim() !== '');
     await processAllUrls(urls);
+  } else if (command === 'test') { // "./run test" command is right here
+    console.log('Test running...');
+    //call test() 
+    await test(); //test will output all error messages on it's own, don't need to handle here.
+    console.log('Test completed.');
   } else {
     console.error('Usage: ./run install | ./run <FILE_PATH>');
     process.exit(1);
