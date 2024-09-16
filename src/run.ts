@@ -4,7 +4,7 @@ dotenv.config();
 //console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
 
 
-import { getGithubContributors, getNpmContributors, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility } from './metrics';
+import { getGithubContributors, getNpmContributors, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric } from './metrics';
 import { test } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
@@ -85,6 +85,12 @@ async function processGithubUrl(url: string, results: any) {
   results.RampUp = ratio.toFixed(2);
   results.RampUp_Latency = (((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3));
 
+  const CorrectnessStartTime = performance.performance.now();
+  const test_ratio = await calculateCorrectnessMetric(localPath, sloc);
+  results.Correctness = test_ratio.toFixed(2);
+  results.Correctness_Latency = (((performance.performance.now() - CorrectnessStartTime) / 1000).toFixed(3));
+  
+
   // Check license compatibility
   const licenseStartTime = performance.performance.now();
   const licenseResult = await checkLicenseCompatibility(url);
@@ -92,8 +98,6 @@ async function processGithubUrl(url: string, results: any) {
   results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
 
   // Placeholder values for metrics not yet implemented
-  results.Correctness = '-1';
-  results.Correctness_Latency = '-1';
   results.ResponsiveMaintainer = '-1';
   results.ResponsiveMaintainer_Latency = '-1';
 }
@@ -145,6 +149,11 @@ async function processNpmUrl(url: string, results: any) {
       results.RampUp = ratio.toFixed(2);
       results.RampUp_Latency = ((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3);
 
+      const CorrectnessStartTime = performance.performance.now();
+      const test_ratio = await calculateCorrectnessMetric(localPath, sloc);
+      results.Correctness = test_ratio.toFixed(2);
+      results.Correctness_Latency = ((performance.performance.now() - CorrectnessStartTime) / 1000).toFixed(3);
+
       const licenseStartTime = performance.performance.now();
       const licenseResult = await checkLicenseCompatibility(githubUrl);
       results.License = licenseResult.score.toFixed(2);
@@ -169,8 +178,6 @@ async function processNpmUrl(url: string, results: any) {
   results.NetScore_Latency = ((performance.performance.now() - startTime) / 1000).toFixed(3);
 
   // Placeholder values for metrics not yet implemented
-  results.Correctness = '-1';
-  results.Correctness_Latency = '-1';
   results.ResponsiveMaintainer = '-1';
   results.ResponsiveMaintainer_Latency = '-1';
 }
@@ -215,7 +222,7 @@ async function processAllUrls(urls: string[]) {
     result.License === '0.00' || 
     result.BusFactor === '0.00' || 
     result.RampUp === '0.00' || 
-    result.Correctness === '-1' || 
+    result.Correctness === '0.00' || 
     result.ResponsiveMaintainer === '-1') {
   result.NetScore = '0.00';
 } else {

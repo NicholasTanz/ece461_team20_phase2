@@ -1,5 +1,6 @@
 import simpleGit from 'simple-git';
 import * as fs from 'fs';
+import * as fsp from 'fs/promises'
 import * as path from 'path';
 import axios from 'axios';
 
@@ -243,4 +244,107 @@ function isCompatibleWithLGPLv2_1(licenseText: string): boolean {
     licenseText.toLowerCase().includes(license.toLowerCase()) ||
     licenseText.toLowerCase().includes(license.toLowerCase().replace('-', ' '))
   );
+}
+
+async function detectTestFrameworks(projectPath: string): Promise<string[]> {
+  const frameworks: string[] = [];
+  const knownTestFrameworks = ['jest', 'mocha', 'jasmine', 'ava', 'cypress'];
+
+  try {
+      // Read package.json to check for testing frameworks in dependencies or devDependencies
+      const packageJsonPath = path.join(projectPath, 'package.json');
+      const packageJson = JSON.parse(await fsp.readFile(packageJsonPath, 'utf-8'));
+      const devDependencies = packageJson.devDependencies || {};
+      const dependencies = packageJson.dependencies || {};
+
+      // Check for known test frameworks in both dependencies and devDependencies
+      for (const framework of knownTestFrameworks) {
+          if (devDependencies[framework] || dependencies[framework]) {
+              frameworks.push(framework);
+          }
+      }
+  } catch (error: any) {
+      console.error(`Error reading package.json for test frameworks: ${error.message}`);
+  }
+
+  return frameworks;
+}
+
+export async function calculateCorrectnessMetric(projectPath: string, sloc: number): Promise<number> {
+  let totalLinesOfTestCode = 0;
+
+  // Detect test frameworks to guide which files should be checked
+  const detectedFrameworks = await detectTestFrameworks(projectPath);
+  //console.log(`Detected test frameworks: ${detectedFrameworks.length > 0 ? detectedFrameworks.join(', ') : 'None'}`);
+
+  // Define framework-specific test file patterns
+  const frameworkSpecificPatterns: { [framework: string]: string[] } = {
+      jest: ['.test.js', '.test.ts', '.spec.js', '.spec.ts', '__tests__/'],
+      mocha: ['.test.js', '.spec.js', 'test/'],
+      jasmine: ['.spec.js', 'spec/'],
+      cypress: ['.cy.js', '.cy.ts', 'cypress/integration/'],
+      ava: ['.test.js', 'test/']
+  };
+
+  // Default test file patterns to check if no frameworks are detected
+  const defaultTestFilePatterns = ['.test.js', '.spec.js', 'test/', '__tests__/'];
+
+  // Helper function to check if a file matches test file patterns for the detected frameworks
+  function isTestFile(fileName: string, filePath: string): boolean {
+      // If no frameworks are detected, fall back to default test patterns
+      const patterns = detectedFrameworks.length > 0
+          ? detectedFrameworks.reduce((acc, framework) => {
+              if (frameworkSpecificPatterns[framework]) {
+                  acc.push(...frameworkSpecificPatterns[framework]);
+              }
+              return acc;
+          }, [] as string[])
+          : defaultTestFilePatterns;
+
+      // Check if the file matches any of the framework-specific or default patterns
+      return patterns.some(pattern => fileName.endsWith(pattern) || filePath.includes(pattern));
+  }
+
+  // Helper function to count lines in a file asynchronously
+  async function countLinesInFile(filePath: string): Promise<number> {
+      try {
+          const fileContent = await fsp.readFile(filePath, 'utf-8');
+          return fileContent.split('\n').length;
+      } catch (error: any) {
+          console.error(`Error reading file ${filePath}: ${error.message}`);
+          return 0; // Return 0 in case of error reading file
+      }
+  }
+
+  // Asynchronously walk through directories
+  async function walkTestDirectory(currentPath: string): Promise<void> {
+      try {
+          const files = await fsp.readdir(currentPath);
+
+          const promises = files.map(async (file) => {
+              const fullPath = path.join(currentPath, file);
+              const stats = await fsp.stat(fullPath);
+
+              if (stats.isDirectory()) {
+                  // Recursively walk through subdirectories
+                  await walkTestDirectory(fullPath);
+              } else if (stats.isFile() && isTestFile(file, fullPath)) {
+                  // If it's a test file, count the number of lines and add to the total
+                  const lineCount = await countLinesInFile(fullPath);
+                  totalLinesOfTestCode += lineCount;
+              }
+          });
+
+          // Wait for all promises to complete
+          await Promise.all(promises);
+      } catch (error: any) {
+          console.error(`Error walking directory ${currentPath}: ${error.message}`);
+      }
+  }
+
+  // Start walking the project directory
+  await walkTestDirectory(projectPath);
+
+  // Return the ratio of SLOTC to SLOC, or 0 if SLOC is 0 to avoid division by zero
+  return sloc === 0 ? 0 : totalLinesOfTestCode / sloc;
 }
