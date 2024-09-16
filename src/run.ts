@@ -226,7 +226,7 @@ async function processAllUrls(urls: string[]) {
     result.License === '0.00' || 
     result.BusFactor === '0.00' || 
     result.RampUp === '0.00' || 
-    result.Correctness === '-1' || 
+    result.Correctness === '0.00' || 
     result.ResponsiveMaintainer === '-1') {
   result.NetScore = '0.00';
 } else {
