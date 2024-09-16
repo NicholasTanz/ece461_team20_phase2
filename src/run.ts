@@ -98,8 +98,6 @@ async function processGithubUrl(url: string, results: any) {
   results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
 
   // Placeholder values for metrics not yet implemented
-  //results.Correctness = '-1';
-  //results.Correctness_Latency = '-1';
   results.ResponsiveMaintainer = '-1';
   results.ResponsiveMaintainer_Latency = '-1';
 }
@@ -180,8 +178,6 @@ async function processNpmUrl(url: string, results: any) {
   results.NetScore_Latency = ((performance.performance.now() - startTime) / 1000).toFixed(3);
 
   // Placeholder values for metrics not yet implemented
-  //results.Correctness = '-1';
-  //results.Correctness_Latency = '-1';
   results.ResponsiveMaintainer = '-1';
   results.ResponsiveMaintainer_Latency = '-1';
 }

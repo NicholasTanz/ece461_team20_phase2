@@ -275,7 +275,7 @@ export async function calculateCorrectnessMetric(projectPath: string, sloc: numb
 
   // Detect test frameworks to guide which files should be checked
   const detectedFrameworks = await detectTestFrameworks(projectPath);
-  console.log(`Detected test frameworks: ${detectedFrameworks.length > 0 ? detectedFrameworks.join(', ') : 'None'}`);
+  //console.log(`Detected test frameworks: ${detectedFrameworks.length > 0 ? detectedFrameworks.join(', ') : 'None'}`);
 
   // Define framework-specific test file patterns
   const frameworkSpecificPatterns: { [framework: string]: string[] } = {
@@ -346,7 +346,5 @@ export async function calculateCorrectnessMetric(projectPath: string, sloc: numb
   await walkTestDirectory(projectPath);
 
   // Return the ratio of SLOTC to SLOC, or 0 if SLOC is 0 to avoid division by zero
-  console.log(totalLinesOfTestCode);
-  console.log(sloc);
   return sloc === 0 ? 0 : totalLinesOfTestCode / sloc;
 }
