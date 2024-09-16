@@ -346,5 +346,7 @@ export async function calculateCorrectnessMetric(projectPath: string, sloc: numb
   await walkTestDirectory(projectPath);
 
   // Return the ratio of SLOTC to SLOC, or 0 if SLOC is 0 to avoid division by zero
+  console.log(totalLinesOfTestCode);
+  console.log(sloc);
   return sloc === 0 ? 0 : totalLinesOfTestCode / sloc;
 }
