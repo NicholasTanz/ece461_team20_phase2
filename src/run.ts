@@ -4,7 +4,7 @@ dotenv.config();
 //console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
 
 
-import { getGithubContributors, getNpmContributors, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric } from './metrics';
+import { getGithubContributors, getNpmContributors, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
 import { test } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
@@ -37,28 +37,10 @@ async function processUrl(url: string): Promise<any> {
     return null; // Return null if URL isn't valid
   }
 
+  // Calculate NetScore and NetScore_Latency
+  results.NetScore = calculateNetScore(results);
   results.NetScore_Latency = ((performance.performance.now() - startTime) / 1000).toFixed(3);
 
-  // Calculate NetScore (Use -1 where metrics are not yet implemented)
-  if (parseFloat(results.License) === 0 || 
-  results.License === '-1' ||   
-  results.BusFactor === '-1' || 
-  results.RampUp === '-1' || 
-  results.Correctness === '-1' || 
-  results.ResponsiveMaintainer === '-1') {
-results.NetScore = '0.00';
-} else {
-const netScore = (
-  parseFloat(results.BusFactor) * 0.2 +
-  parseFloat(results.RampUp) * 0.1 +
-  parseFloat(results.Correctness) * 0.1 +
-  parseFloat(results.ResponsiveMaintainer) * 0.1 +
-  parseFloat(results.License) * 0.5
-);
-results.NetScore = netScore.toFixed(2);
-}
-
-  // Return results
   return results;
 }
 
@@ -90,6 +72,11 @@ async function processGithubUrl(url: string, results: any) {
   results.Correctness = test_ratio.toFixed(2);
   results.Correctness_Latency = (((performance.performance.now() - CorrectnessStartTime) / 1000).toFixed(3));
   
+  // Calculate Responsive Maintainer metric
+  const responsiveMaintainerStartTime = performance.performance.now();
+  const responsiveMaintainerScore = await calculateResponsiveMaintainerMetric(url);
+  results.ResponsiveMaintainer = responsiveMaintainerScore.toFixed(2);
+  results.ResponsiveMaintainer_Latency = ((performance.performance.now() - responsiveMaintainerStartTime) / 1000).toFixed(3);  
 
   // Check license compatibility
   const licenseStartTime = performance.performance.now();
@@ -97,9 +84,6 @@ async function processGithubUrl(url: string, results: any) {
   results.License = licenseResult.score.toFixed(2);
   results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
 
-  // Placeholder values for metrics not yet implemented
-  results.ResponsiveMaintainer = '-1';
-  results.ResponsiveMaintainer_Latency = '-1';
 }
 
 async function processNpmUrl(url: string, results: any) {
@@ -159,27 +143,20 @@ async function processNpmUrl(url: string, results: any) {
       results.License = licenseResult.score.toFixed(2);
       results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
 
+      const responsiveMaintainerStartTime = performance.performance.now();
+      const responsiveMaintainerScore = await calculateResponsiveMaintainerMetric(githubUrl);
+      results.ResponsiveMaintainer = responsiveMaintainerScore.toFixed(2);
+      results.ResponsiveMaintainer_Latency = ((performance.performance.now() - responsiveMaintainerStartTime) / 1000).toFixed(3);
+
     } else {
       // Handle missing repository field
       console.error(`No repository field found for npm package ${packageName}`);
-      results.RampUp = '-1';
-      results.RampUp_Latency = '-1';
-      results.License = '-1';
-      results.License_Latency = '-1';
     }
   } catch (error) {
     console.error(`Error processing npm package ${packageName}:`, error);
-    results.RampUp = '-1';
-    results.RampUp_Latency = '-1';
-    results.License = '-1';
-    results.License_Latency = '-1';
   }
 
   results.NetScore_Latency = ((performance.performance.now() - startTime) / 1000).toFixed(3);
-
-  // Placeholder values for metrics not yet implemented
-  results.ResponsiveMaintainer = '-1';
-  results.ResponsiveMaintainer_Latency = '-1';
 }
 
 
@@ -217,24 +194,8 @@ async function processAllUrls(urls: string[]) {
       result.RampUp = '0.00'; // Default to 0 if not available
     }
 
-    // Recalculate NetScore using valid metrics only
-    if (parseFloat(result.License) === 0 || 
-    result.License === '0.00' || 
-    result.BusFactor === '0.00' || 
-    result.RampUp === '0.00' || 
-    result.Correctness === '0.00' || 
-    result.ResponsiveMaintainer === '-1') {
-  result.NetScore = '0.00';
-} else {
-  const netScore = (
-    parseFloat(result.BusFactor) * 0.2 +
-    parseFloat(result.RampUp) * 0.1 +
-    parseFloat(result.Correctness) * 0.1 +
-    parseFloat(result.ResponsiveMaintainer) * 0.1 +
-    parseFloat(result.License) * 0.5
-  );
-  result.NetScore = isNaN(netScore) ? '0.00' : netScore.toFixed(2);
-}
+    result.NetScore = calculateNetScore(result);
+    
   });
 
   // Sort results by NetScore from highest to lowest
@@ -244,6 +205,28 @@ async function processAllUrls(urls: string[]) {
   resultsArray.forEach(result => console.log(JSON.stringify(result)));
 }
 
+// calculate NetScore function
+function calculateNetScore(result: any): string {
+  if (
+    parseFloat(result.License) === 0 || 
+    result.License === '0.00' || 
+    result.BusFactor === '0.00' || 
+    result.RampUp === '0.00' || 
+    result.Correctness === '0.00' || 
+    result.ResponsiveMaintainer === '0.00'
+  ) {
+    return '0.00';
+  } else {
+    const netScore = (
+      parseFloat(result.BusFactor) * 0.2 +
+      parseFloat(result.RampUp) * 0.1 +
+      parseFloat(result.Correctness) * 0.1 +
+      parseFloat(result.ResponsiveMaintainer) * 0.1 +
+      parseFloat(result.License) * 0.5
+    );
+    return isNaN(netScore) ? '0.00' : netScore.toFixed(2);
+  }
+}
 
 async function main() {
   require('dotenv').config(); //Neccesary for GITHUB_TOKEN

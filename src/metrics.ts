@@ -3,11 +3,13 @@ import * as fs from 'fs';
 import * as fsp from 'fs/promises'
 import * as path from 'path';
 import axios from 'axios';
+import { Octokit } from "@octokit/core";
 
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
 const PER_PAGE = 100; // GitHub API truncates certain number of contributors
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
+const octokit = new Octokit({ auth: GITHUB_TOKEN }); // Create an authenticated Octokit instance
 
 // Function to fetch the total number of contributors for a GitHub repository
 export async function getGithubContributors(url: string): Promise<number> {
@@ -74,9 +76,6 @@ export async function getNpmContributors(packageName: string): Promise<number> {
     return -1; // Return -1 to indicate failure
   }
 }
-
-
-
 
 // Function to clone a GitHub repository locally using simple-git
 export async function cloneRepo(url: string, localPath: string): Promise<void> {
@@ -240,6 +239,11 @@ function isCompatibleWithLGPLv2_1(licenseText: string): boolean {
     'MIT', 'BSD-2-Clause', 'BSD-3-Clause',
     'Apache-2.0', 'ISC', 'Unlicense'
   ];
+
+  if (licenseText.toUpperCase() === 'UNLICENSED') {
+    return false;
+  }
+
   return compatibleLicenses.some(license => 
     licenseText.toLowerCase().includes(license.toLowerCase()) ||
     licenseText.toLowerCase().includes(license.toLowerCase().replace('-', ' '))
@@ -347,4 +351,54 @@ export async function calculateCorrectnessMetric(projectPath: string, sloc: numb
 
   // Return the ratio of SLOTC to SLOC, or 0 if SLOC is 0 to avoid division by zero
   return sloc === 0 ? 0 : totalLinesOfTestCode / sloc;
+}
+
+export async function calculateResponsiveMaintainerMetric(url: string): Promise<number> {
+  try {
+    const repoPath = url.replace('https://github.com/', '');
+    const [owner, repo] = repoPath.split('/');
+
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const dateFilter = oneMonthAgo.toISOString();
+
+    // Get closed issues in last month
+    const closedIssuesResponse = await octokit.request('GET /repos/{owner}/{repo}/issues', {
+      owner,
+      repo,
+      state: 'closed',
+      since: dateFilter,
+    });
+    const closedIssues = closedIssuesResponse.data;
+
+    // Get closed pull requests in last month
+    const closedPRsResponse = await octokit.request('GET /repos/{owner}/{repo}/pulls', {
+      owner,
+      repo,
+      state: 'closed',
+      sort: 'updated',
+      direction: 'desc',
+    });
+    const closedPRs = closedPRsResponse.data;
+    const recentClosedPRs = closedPRs.filter(pr => new Date(pr.closed_at!) >= oneMonthAgo);
+
+    // Get total open issues and PRs
+    const openIssuesResponse = await octokit.request('GET /repos/{owner}/{repo}/issues', {
+      owner,
+      repo,
+      state: 'open',
+    });
+    const openIssues = openIssuesResponse.data;
+
+    const totalClosed = closedIssues.length + recentClosedPRs.length;
+    const totalOpen = openIssues.length;
+
+    // Calculation for responsive maintainer
+    const responsiveScore = totalOpen === 0 && totalClosed === 0 ? 0 : totalClosed / (totalClosed + totalOpen);
+
+    return Math.min(responsiveScore, 1); // Make sure the score is between 0 and 1
+  } catch (error: any) {
+    console.error(`Error calculating Responsive Maintainer metric: ${error.message}`);
+    return 0;
+  }
 }
