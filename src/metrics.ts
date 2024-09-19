@@ -8,12 +8,10 @@ const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint
 const PER_PAGE = 100; // GitHub API truncates certain number of contributors
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
 
-// Function to fetch the total number of contributors for a GitHub repository
-export async function getGithubContributors(url: string): Promise<number> {
-  //console.log(`Analyzying URL ${url}------1:`);
+export async function getBusFactor(url: string): Promise<number> {
   const repoPath = url.replace('https://github.com/', ''); // Extract the repository path from the provided GitHub URL
   let totalContributors = 0;
-  let page = 1; // Start with the first page of results as github APO truncates to 100 users per page
+  let page = 1; // Start with the first page of results as github API truncates to 100 users per page
 
   try {
     // Loop through all available contributor pages from the GitHub API
@@ -37,44 +35,38 @@ export async function getGithubContributors(url: string): Promise<number> {
 
       page++; // Increment the page number to fetch the next set of contributors
     }
-    //console.log(`\nModule ${repoPath} has ${totalContributors} contributors!!!!!!!!!!!!!!!!!\n`);
-    console.error(`Success fetching contributors for GitHub repo ${url}`);
-    return totalContributors; // Return the total number of contributors
+
+    // Calculate the Bus Factor based on the total number of contributors
+    let busFactorScore: number;
+    if (totalContributors === 1) {
+      busFactorScore = 0.1;
+    } else if (totalContributors === 2) {
+      busFactorScore = 0.2;
+    } else if (totalContributors <= 4) {
+      busFactorScore = 0.3;
+    } else if (totalContributors <= 8) {
+      busFactorScore = 0.4;
+    } else if (totalContributors <= 16) {
+      busFactorScore = 0.5;
+    } else if (totalContributors <= 32) {
+      busFactorScore = 0.6;
+    } else if (totalContributors <= 64) {
+      busFactorScore = 0.7;
+    } else if (totalContributors <= 128) {
+      busFactorScore = 0.8;
+    } else if (totalContributors <= 256) {
+      busFactorScore = 0.9;
+    } else {
+      busFactorScore = 1.0;
+    }
+
+    return busFactorScore; // Return the calculated Bus Factor score
   } catch (error: any) {
     // Handle any errors that occur during the API request
     console.error(`Error fetching contributors for GitHub repo ${url}:`, error.message);
     return -1; // Return -1 to indicate failure
   }
 }
-
-// Function to fetch the number of contributors for an npm package
-export async function getNpmContributors(packageName: string): Promise<number> {
-  try {
-    // Send a GET request to the npm registry to get package details
-    const response = await axios.get(`${NPM_REGISTRY_URL}${packageName}`);
-    const repository = response.data.repository; // Extract the repository information from the package data
-
-    // Check if the npm package has a GitHub repository link
-    if (repository && repository.type === 'git' && repository.url) {
-      let repoUrl = repository.url.replace(/^git\+/, '') // Remove any "git+" prefix from the repository URL
-                                  .replace(/^ssh:\/\//, 'https://') // Fix ssh URL to https
-                                  .replace(/^https:\/\/git@github.com\//, 'https://github.com/') // Fix incorrect URL starting with "https://git@github.com/"
-                                  .replace(/^git\+ssh:\/\//, 'https://'); // Handle git+ssh
-
-      const formattedUrl = repoUrl.replace(/\.git$/, ''); // Remove the ".git" suffix from the URL
-      return getGithubContributors(formattedUrl); // Reuse the GitHub function to fetch contributors
-    } else {
-      console.log(`npm package: ${packageName} - Repository information not available.`);
-      return -1; // Return -1 if there is no repository information
-    }
-  } catch (error: any) {
-    // Handle any errors during the request
-    console.error(`Error fetching data for npm package ${packageName}:`, error.message);
-    return -1; // Return -1 to indicate failure
-  }
-}
-
-
 
 
 // Function to clone a GitHub repository locally using simple-git
@@ -87,69 +79,89 @@ export async function cloneRepo(url: string, localPath: string): Promise<void> {
   }
 }
 
-// Function to count Source Lines of Code (SLOC) and comments in a file
-function countSlocAndComments(fileContent: string): { sloc: number, comments: number } {
-  const lines = fileContent.split('\n'); // Split the file content into individual lines
-  let sloc = 0; // Initialize SLOC count
-  let comments = 0; // Initialize comment count
-  let inBlockComment = false; // Keep track of whether we're inside a block comment
+// Function to count Source Lines of Code (SLOC) and comments in a file (first 100 lines)
+function countSlocAndCommentsLimited(fileContent: string): { sloc: number, comments: number } {
+  const lines = fileContent.split('\n').slice(0, 100); // Limit to first 100 lines
+  let sloc = 0;
+  let comments = 0;
+  let inBlockComment = false;
 
-  // Iterate through each line of the file
   for (const line of lines) {
-    const trimmedLine = line.trim(); // Trim whitespace from the line
+    const trimmedLine = line.trim();
 
-    // Handle block comments (e.g., /* ... */)
+    // Handle block comments (/* ... */)
     if (inBlockComment) {
-      comments++; // Count each line inside a block comment
+      comments++;
       if (trimmedLine.endsWith('*/')) {
-        inBlockComment = false; // End the block comment
+        inBlockComment = false;
       }
     } else if (trimmedLine.startsWith('//')) {
-      comments++; // Single-line comment (e.g., // Comment)
+      comments++; // Single-line comment
     } else if (trimmedLine.startsWith('/*')) {
-      comments++; // Block comment start (e.g., /* Comment)
-      inBlockComment = !trimmedLine.endsWith('*/'); // If the block comment doesn't end on the same line, continue
+      comments++;
+      inBlockComment = !trimmedLine.endsWith('*/');
     } else if (trimmedLine.length > 0) {
-      sloc++; // Count lines of code that aren't empty or comments
+      sloc++; // Count lines of code
     }
   }
 
-  return { sloc, comments }; // Return the SLOC and comment counts
+  return { sloc, comments };
 }
 
-// Recursive function to walk through a directory and apply a callback to each JavaScript or TypeScript file
-async function walkDirectory(dir: string, fileCallback: (filePath: string) => void) {
-  const files = fs.readdirSync(dir); // Read the directory contents
+// Function to walk through a directory and process only .js or .ts files
+async function walkDirectoryLimited(dir: string, fileCallback: (filePath: string) => void) {
+  const files = fs.readdirSync(dir);
 
   for (const file of files) {
-    const fullPath = path.join(dir, file); // Construct the full path of the file
-    const stat = fs.statSync(fullPath); // Get file statistics to determine if it's a file or directory
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
 
-    // If the item is a directory, recursively walk through its contents
     if (stat.isDirectory()) {
-      await walkDirectory(fullPath, fileCallback);
+      await walkDirectoryLimited(fullPath, fileCallback);
     } else if (file.endsWith('.ts') || file.endsWith('.js')) {
-      fileCallback(fullPath); // Apply the callback to JavaScript and TypeScript files
+      fileCallback(fullPath);
     }
   }
 }
 
-// Function to calculate the "Ramp Up" metric based on comment-to-SLOC ratio
-export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: number, comments: number, ratio: number }> {
-  let totalSloc = 0; // Initialize total SLOC count
-  let totalComments = 0; // Initialize total comment count
+// Function to read the README file and extract words and non-GitHub/npm links
+function processReadme(readmeContent: string) {
+  const wordCount = readmeContent.split(/\s+/).length;
+  const nonGitHubLinks = readmeContent.match(/https?:\/\/(?!github\.com|npmjs\.com)[^\s]+/g) || [];
 
-  // Walk through all files in the repository directory and sum up SLOC and comments
-  await walkDirectory(localPath, (filePath) => {
-    const fileContent = fs.readFileSync(filePath, 'utf8'); // Read the file content as a string
-    const { sloc, comments } = countSlocAndComments(fileContent); // Count SLOC and comments in the file
-    totalSloc += sloc; // Add to total SLOC count
-    totalComments += comments; // Add to total comment count
+  // console.log(`README word count: ${wordCount}`);
+  // console.log(`Non-GitHub/npm links: ${nonGitHubLinks.length}`);
+}
+
+// Function to calculate the "Ramp Up" metric
+export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: number, comments: number, ratio: number }> {
+  let totalSloc = 0;
+  let totalComments = 0;
+
+  // Walk through JavaScript and TypeScript files
+  await walkDirectoryLimited(localPath, (filePath) => {
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    const { sloc, comments } = countSlocAndCommentsLimited(fileContent);
+    totalSloc += sloc;
+    totalComments += comments;
   });
 
-  const ratio = totalComments / totalSloc; // Calculate the ratio of comments to SLOC
+  const ratio = totalComments / totalSloc;
+  const repoName = path.basename(localPath);
 
-  return { sloc: totalSloc, comments: totalComments, ratio }; // Return the calculated metric
+  // console.log(`Repository: ${repoName}`);
+  // console.log(`SLOC: ${totalSloc}, Comments: ${totalComments}, Ratio: ${ratio}`);
+
+  // Process README file if it exists
+  const readmePath = path.join(localPath, 'README.md');
+  if (fs.existsSync(readmePath)) {
+    const readmeContent = fs.readFileSync(readmePath, 'utf8');
+    processReadme(readmeContent);
+  } else {
+    // console.log('No README file found.');
+  }
+
+  return { sloc: totalSloc, comments: totalComments, ratio };
 }
 
 
