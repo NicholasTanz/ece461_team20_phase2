@@ -58,7 +58,6 @@ async function processUrl(url: string): Promise<any> {
     );
     results.NetScore = netScore.toFixed(2);
   }
-
   // Return results
   return results;
 }
