@@ -4,6 +4,7 @@
   "description": "CLI for processing URLs and fetching metadata from npm and GitHub",
   "main": "dist/run.js",
   "scripts": {
+    "prebuild": "npm i",
     "build": "tsc",
     "start": "node dist/run.js"
   },

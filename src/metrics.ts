@@ -284,7 +284,9 @@ export async function calculateCorrectnessMetric(projectPath: string): Promise<n
 
   if (detectedFrameworks.length > 0) {
     hasTestSuite = 0.5; //half the battle is if the test suite is even there because we may not walk all the lines
+    logger.info("Frameworks Detected: " + detectedFrameworks);
   }
+  
 
   // Define framework-specific test file patterns
   const frameworkSpecificPatterns: { [framework: string]: string[] } = {
@@ -362,11 +364,11 @@ export async function calculateCorrectnessMetric(projectPath: string): Promise<n
   // Start by walking the project directory
   await walkDirectory(projectPath);
 
-  logger.info("Calculate Correctness Ran");
+  //logger.info("Calculate Correctness Ran");
   if(totalLinesOfTestCode > 0 && totalFiles > 0) {
     hasTestSuite = 0.5; //force value in case test files were discovered outside of detect test frameworks.
     //This shows evidence of testing therefore score is >0.5 per rubric
-    estimatedTotalLines = totalFiles*100; //assume 100 sloc per file for dcent range within correctness value for most packages
+    estimatedTotalLines = totalFiles*100; //assume 100 sloc per file for decent range within correctness value for most packages
     let lineRatio = 0.5*(totalLinesOfTestCode / estimatedTotalLines);
     lineRatio = lineRatio > 0.5 ? 0.5 : lineRatio; // make line ratio have a max of 0.5
     return hasTestSuite + lineRatio;
