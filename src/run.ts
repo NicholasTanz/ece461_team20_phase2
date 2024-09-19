@@ -58,7 +58,6 @@ async function processUrl(url: string): Promise<any> {
     );
     results.NetScore = netScore.toFixed(2);
   }
-
   // Return results
   return results;
 }
@@ -137,12 +136,6 @@ async function processNpmUrl(url: string, results: any) {
   } catch (error) {
     console.error(`Error processing npm package ${packageName}:`, error);
   }
-
-  // Placeholder values for metrics not yet implemented
-  results.Correctness = '-1';
-  results.Correctness_Latency = '-1';
-  results.ResponsiveMaintainer = '-1';
-  results.ResponsiveMaintainer_Latency = '-1';
 }
 
 
