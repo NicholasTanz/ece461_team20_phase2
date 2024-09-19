@@ -12,7 +12,8 @@
     "dotenv": "^16.4.5",
     "ndjson": "^2.0.0",
     "simple-git": "^3.19.1",
-    "@octokit/core": "^5.0.0"
+    "@octokit/core": "^5.0.0",
+    "winston": "^3.8.2"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

@@ -4,6 +4,7 @@ import * as fsp from 'fs/promises'
 import * as path from 'path';
 import axios from 'axios';
 import { Octokit } from "@octokit/core";
+import logger from './logger';
 
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
@@ -274,12 +275,17 @@ async function detectTestFrameworks(projectPath: string): Promise<string[]> {
   return frameworks;
 }
 
-export async function calculateCorrectnessMetric(projectPath: string, sloc: number): Promise<number> {
+export async function calculateCorrectnessMetric(projectPath: string): Promise<number> {
   let totalLinesOfTestCode = 0;
-
+  let totalFiles = 0; // Count of all files
+  let estimatedTotalLines = 0; //this will be an estimated value of the total files.it is estimated for sake of runtime
+  let hasTestSuite = 0; // created as number instead of boolean for sake of ease of addition to calculations
   // Detect test frameworks to guide which files should be checked
   const detectedFrameworks = await detectTestFrameworks(projectPath);
-  //console.log(`Detected test frameworks: ${detectedFrameworks.length > 0 ? detectedFrameworks.join(', ') : 'None'}`);
+
+  if (detectedFrameworks.length > 0) {
+    hasTestSuite = 0.5; //half the battle is if the test suite is even there because we may not walk all the lines
+  }
 
   // Define framework-specific test file patterns
   const frameworkSpecificPatterns: { [framework: string]: string[] } = {
@@ -295,7 +301,6 @@ export async function calculateCorrectnessMetric(projectPath: string, sloc: numb
 
   // Helper function to check if a file matches test file patterns for the detected frameworks
   function isTestFile(fileName: string, filePath: string): boolean {
-      // If no frameworks are detected, fall back to default test patterns
       const patterns = detectedFrameworks.length > 0
           ? detectedFrameworks.reduce((acc, framework) => {
               if (frameworkSpecificPatterns[framework]) {
@@ -305,7 +310,6 @@ export async function calculateCorrectnessMetric(projectPath: string, sloc: numb
           }, [] as string[])
           : defaultTestFilePatterns;
 
-      // Check if the file matches any of the framework-specific or default patterns
       return patterns.some(pattern => fileName.endsWith(pattern) || filePath.includes(pattern));
   }
 
@@ -315,42 +319,61 @@ export async function calculateCorrectnessMetric(projectPath: string, sloc: numb
           const fileContent = await fsp.readFile(filePath, 'utf-8');
           return fileContent.split('\n').length;
       } catch (error: any) {
-          console.error(`Error reading file ${filePath}: ${error.message}`);
+          logger.debug(`Error reading file ${filePath}: ${error.message}`);
           return 0; // Return 0 in case of error reading file
       }
   }
 
-  // Asynchronously walk through directories
-  async function walkTestDirectory(currentPath: string): Promise<void> {
+  // Asynchronously walk through directories, limited to depth of 1 for all files and test files
+  async function walkDirectory(currentPath: string, depth: number = 0): Promise<void> {
       try {
           const files = await fsp.readdir(currentPath);
 
           const promises = files.map(async (file) => {
               const fullPath = path.join(currentPath, file);
-              const stats = await fsp.stat(fullPath);
+              let stats;
+              try {
+                  stats = await fsp.stat(fullPath);
+              } catch (error: any) {
+                  logger.debug(`Error reading stats for file ${fullPath}: ${error.message}`);
+                  return; // Skip this file and continue
+              }
 
               if (stats.isDirectory()) {
-                  // Recursively walk through subdirectories
-                  await walkTestDirectory(fullPath);
-              } else if (stats.isFile() && isTestFile(file, fullPath)) {
-                  // If it's a test file, count the number of lines and add to the total
+                  // Only walk through directories to a depth of 1
+                  if (depth < 1) {
+                      await walkDirectory(fullPath, depth + 1);
+                  }
+              } else if (stats.isFile()) {
+                  totalFiles++; // Count every file
                   const lineCount = await countLinesInFile(fullPath);
-                  totalLinesOfTestCode += lineCount;
+
+                  if (isTestFile(file, fullPath)) {
+                      totalLinesOfTestCode += lineCount; // Count lines of test code
+                  }
               }
           });
 
-          // Wait for all promises to complete
           await Promise.all(promises);
       } catch (error: any) {
-          console.error(`Error walking directory ${currentPath}: ${error.message}`);
+          logger.debug(`Error walking directory ${currentPath}: ${error.message}`);
       }
   }
 
-  // Start walking the project directory
-  await walkTestDirectory(projectPath);
+  // Start by walking the project directory
+  await walkDirectory(projectPath);
 
-  // Return the ratio of SLOTC to SLOC, or 0 if SLOC is 0 to avoid division by zero
-  return sloc === 0 ? 0 : totalLinesOfTestCode / sloc;
+  logger.info("Calculate Correctness Ran");
+  if(totalLinesOfTestCode > 0 && totalFiles > 0) {
+    hasTestSuite = 0.5; //force value in case test files were discovered outside of detect test frameworks.
+    //This shows evidence of testing therefore score is >0.5 per rubric
+    estimatedTotalLines = totalFiles*100; //assume 100 sloc per file for dcent range within correctness value for most packages
+    let lineRatio = 0.5*(totalLinesOfTestCode / estimatedTotalLines);
+    lineRatio = lineRatio > 0.5 ? 0.5 : lineRatio; // make line ratio have a max of 0.5
+    return hasTestSuite + lineRatio;
+  } else {
+    return hasTestSuite;
+  }
 }
 
 export async function calculateResponsiveMaintainerMetric(url: string): Promise<number> {

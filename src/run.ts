@@ -5,6 +5,7 @@ dotenv.config();
 
 
 import { getGithubContributors, getNpmContributors, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
+import logger, { flushLogs } from './logger';
 import { test } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
@@ -68,7 +69,7 @@ async function processGithubUrl(url: string, results: any) {
   results.RampUp_Latency = (((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3));
 
   const CorrectnessStartTime = performance.performance.now();
-  const test_ratio = await calculateCorrectnessMetric(localPath, sloc);
+  const test_ratio = await calculateCorrectnessMetric(localPath);
   results.Correctness = test_ratio.toFixed(2);
   results.Correctness_Latency = (((performance.performance.now() - CorrectnessStartTime) / 1000).toFixed(3));
   
@@ -134,7 +135,7 @@ async function processNpmUrl(url: string, results: any) {
       results.RampUp_Latency = ((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3);
 
       const CorrectnessStartTime = performance.performance.now();
-      const test_ratio = await calculateCorrectnessMetric(localPath, sloc);
+      const test_ratio = await calculateCorrectnessMetric(localPath);
       results.Correctness = test_ratio.toFixed(2);
       results.Correctness_Latency = ((performance.performance.now() - CorrectnessStartTime) / 1000).toFixed(3);
 
@@ -246,6 +247,7 @@ async function main() {
     //call test() 
     await test(); //test will output all error messages on it's own, don't need to handle here.
     console.log('Test completed.');
+    await flushLogs(); //makes sure logger finished writing
   } else {
     console.error('Usage: ./run install | ./run <FILE_PATH>');
     process.exit(1);
