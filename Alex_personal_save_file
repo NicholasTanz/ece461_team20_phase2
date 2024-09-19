@@ -1,16 +1,12 @@
 import simpleGit from 'simple-git';
 import * as fs from 'fs';
-import * as fsp from 'fs/promises'
 import * as path from 'path';
 import axios from 'axios';
-import { Octokit } from "@octokit/core";
-import logger from './logger';
 
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
 const PER_PAGE = 100; // GitHub API truncates certain number of contributors
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
-const octokit = new Octokit({ auth: GITHUB_TOKEN }); // Create an authenticated Octokit instance
 
 export async function getBusFactor(url: string): Promise<number> {
   const repoPath = url.replace('https://github.com/', ''); // Extract the repository path from the provided GitHub URL
@@ -133,8 +129,8 @@ function processReadme(readmeContent: string) {
   const wordCount = readmeContent.split(/\s+/).length;
   const nonGitHubLinks = readmeContent.match(/https?:\/\/(?!github\.com|npmjs\.com)[^\s]+/g) || [];
 
-  // console.log(`README word count: ${wordCount}`);
-  // console.log(`Non-GitHub/npm links: ${nonGitHubLinks.length}`);
+  console.log(`README word count: ${wordCount}`);
+  console.log(`Non-GitHub/npm links: ${nonGitHubLinks.length}`);
 }
 
 // Function to calculate the "Ramp Up" metric
@@ -153,8 +149,8 @@ export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: 
   const ratio = totalComments / totalSloc;
   const repoName = path.basename(localPath);
 
-  // console.log(`Repository: ${repoName}`);
-  // console.log(`SLOC: ${totalSloc}, Comments: ${totalComments}, Ratio: ${ratio}`);
+  console.log(`Repository: ${repoName}`);
+  console.log(`SLOC: ${totalSloc}, Comments: ${totalComments}, Ratio: ${ratio}`);
 
   // Process README file if it exists
   const readmePath = path.join(localPath, 'README.md');
@@ -162,7 +158,7 @@ export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: 
     const readmeContent = fs.readFileSync(readmePath, 'utf8');
     processReadme(readmeContent);
   } else {
-    // console.log('No README file found.');
+    console.log('No README file found.');
   }
 
   return { sloc: totalSloc, comments: totalComments, ratio };
@@ -183,7 +179,23 @@ export async function checkLicenseCompatibility(url: string): Promise<{ score: n
   };
 
   try {
-    let repoPath = url.replace('https://github.com/', '');
+    let repoPath;
+    if (url.startsWith('https://www.npmjs.com/package/')) {
+      const packageName = url.replace('https://www.npmjs.com/package/', '');
+      const npmResponse = await axios.get(`${NPM_REGISTRY_URL}${packageName}`);
+      const repository = npmResponse.data.repository;
+      if (repository && repository.url) {
+        repoPath = repository.url
+          .replace('git+https://github.com/', '')
+          .replace('git://github.com/', '')
+          .replace('https://github.com/', '')
+          .replace('.git', '');
+      } else {
+        return { score: 0, details: 'No GitHub repository found for npm package' };
+      }
+    } else {
+      repoPath = url.replace('https://github.com/', '');
+    }
 
     let licenseInfo = '';
 
@@ -239,188 +251,8 @@ function isCompatibleWithLGPLv2_1(licenseText: string): boolean {
     'MIT', 'BSD-2-Clause', 'BSD-3-Clause',
     'Apache-2.0', 'ISC', 'Unlicense'
   ];
-
-  if (licenseText.toUpperCase() === 'UNLICENSED') {
-    return false;
-  }
-
   return compatibleLicenses.some(license => 
     licenseText.toLowerCase().includes(license.toLowerCase()) ||
     licenseText.toLowerCase().includes(license.toLowerCase().replace('-', ' '))
   );
-}
-
-async function detectTestFrameworks(projectPath: string): Promise<string[]> {
-  const frameworks: string[] = [];
-  const knownTestFrameworks = ['jest', 'mocha', 'jasmine', 'ava', 'cypress'];
-
-  try {
-      // Read package.json to check for testing frameworks in dependencies or devDependencies
-      const packageJsonPath = path.join(projectPath, 'package.json');
-      const packageJson = JSON.parse(await fsp.readFile(packageJsonPath, 'utf-8'));
-      const devDependencies = packageJson.devDependencies || {};
-      const dependencies = packageJson.dependencies || {};
-
-      // Check for known test frameworks in both dependencies and devDependencies
-      for (const framework of knownTestFrameworks) {
-          if (devDependencies[framework] || dependencies[framework]) {
-              frameworks.push(framework);
-          }
-      }
-  } catch (error: any) {
-      console.error(`Error reading package.json for test frameworks: ${error.message}`);
-  }
-
-  return frameworks;
-}
-
-export async function calculateCorrectnessMetric(projectPath: string): Promise<number> {
-  let totalLinesOfTestCode = 0;
-  let totalFiles = 0; // Count of all files
-  let estimatedTotalLines = 0; //this will be an estimated value of the total files.it is estimated for sake of runtime
-  let hasTestSuite = 0; // created as number instead of boolean for sake of ease of addition to calculations
-  // Detect test frameworks to guide which files should be checked
-  const detectedFrameworks = await detectTestFrameworks(projectPath);
-
-  if (detectedFrameworks.length > 0) {
-    hasTestSuite = 0.5; //half the battle is if the test suite is even there because we may not walk all the lines
-  }
-
-  // Define framework-specific test file patterns
-  const frameworkSpecificPatterns: { [framework: string]: string[] } = {
-      jest: ['.test.js', '.test.ts', '.spec.js', '.spec.ts', '__tests__/'],
-      mocha: ['.test.js', '.spec.js', 'test/'],
-      jasmine: ['.spec.js', 'spec/'],
-      cypress: ['.cy.js', '.cy.ts', 'cypress/integration/'],
-      ava: ['.test.js', 'test/']
-  };
-
-  // Default test file patterns to check if no frameworks are detected
-  const defaultTestFilePatterns = ['.test.js', '.spec.js', 'test/', '__tests__/'];
-
-  // Helper function to check if a file matches test file patterns for the detected frameworks
-  function isTestFile(fileName: string, filePath: string): boolean {
-      const patterns = detectedFrameworks.length > 0
-          ? detectedFrameworks.reduce((acc, framework) => {
-              if (frameworkSpecificPatterns[framework]) {
-                  acc.push(...frameworkSpecificPatterns[framework]);
-              }
-              return acc;
-          }, [] as string[])
-          : defaultTestFilePatterns;
-
-      return patterns.some(pattern => fileName.endsWith(pattern) || filePath.includes(pattern));
-  }
-
-  // Helper function to count lines in a file asynchronously
-  async function countLinesInFile(filePath: string): Promise<number> {
-      try {
-          const fileContent = await fsp.readFile(filePath, 'utf-8');
-          return fileContent.split('\n').length;
-      } catch (error: any) {
-          logger.debug(`Error reading file ${filePath}: ${error.message}`);
-          return 0; // Return 0 in case of error reading file
-      }
-  }
-
-  // Asynchronously walk through directories, limited to depth of 1 for all files and test files
-  async function walkDirectory(currentPath: string, depth: number = 0): Promise<void> {
-      try {
-          const files = await fsp.readdir(currentPath);
-
-          const promises = files.map(async (file) => {
-              const fullPath = path.join(currentPath, file);
-              let stats;
-              try {
-                  stats = await fsp.stat(fullPath);
-              } catch (error: any) {
-                  logger.debug(`Error reading stats for file ${fullPath}: ${error.message}`);
-                  return; // Skip this file and continue
-              }
-
-              if (stats.isDirectory()) {
-                  // Only walk through directories to a depth of 1
-                  if (depth < 1) {
-                      await walkDirectory(fullPath, depth + 1);
-                  }
-              } else if (stats.isFile()) {
-                  totalFiles++; // Count every file
-                  const lineCount = await countLinesInFile(fullPath);
-
-                  if (isTestFile(file, fullPath)) {
-                      totalLinesOfTestCode += lineCount; // Count lines of test code
-                  }
-              }
-          });
-
-          await Promise.all(promises);
-      } catch (error: any) {
-          logger.debug(`Error walking directory ${currentPath}: ${error.message}`);
-      }
-  }
-
-  // Start by walking the project directory
-  await walkDirectory(projectPath);
-
-  logger.info("Calculate Correctness Ran");
-  if(totalLinesOfTestCode > 0 && totalFiles > 0) {
-    hasTestSuite = 0.5; //force value in case test files were discovered outside of detect test frameworks.
-    //This shows evidence of testing therefore score is >0.5 per rubric
-    estimatedTotalLines = totalFiles*100; //assume 100 sloc per file for dcent range within correctness value for most packages
-    let lineRatio = 0.5*(totalLinesOfTestCode / estimatedTotalLines);
-    lineRatio = lineRatio > 0.5 ? 0.5 : lineRatio; // make line ratio have a max of 0.5
-    return hasTestSuite + lineRatio;
-  } else {
-    return hasTestSuite;
-  }
-}
-
-export async function calculateResponsiveMaintainerMetric(url: string): Promise<number> {
-  try {
-    const repoPath = url.replace('https://github.com/', '');
-    const [owner, repo] = repoPath.split('/');
-
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const dateFilter = oneMonthAgo.toISOString();
-
-    // Get closed issues in last month
-    const closedIssuesResponse = await octokit.request('GET /repos/{owner}/{repo}/issues', {
-      owner,
-      repo,
-      state: 'closed',
-      since: dateFilter,
-    });
-    const closedIssues = closedIssuesResponse.data;
-
-    // Get closed pull requests in last month
-    const closedPRsResponse = await octokit.request('GET /repos/{owner}/{repo}/pulls', {
-      owner,
-      repo,
-      state: 'closed',
-      sort: 'updated',
-      direction: 'desc',
-    });
-    const closedPRs = closedPRsResponse.data;
-    const recentClosedPRs = closedPRs.filter(pr => new Date(pr.closed_at!) >= oneMonthAgo);
-
-    // Get total open issues and PRs
-    const openIssuesResponse = await octokit.request('GET /repos/{owner}/{repo}/issues', {
-      owner,
-      repo,
-      state: 'open',
-    });
-    const openIssues = openIssuesResponse.data;
-
-    const totalClosed = closedIssues.length + recentClosedPRs.length;
-    const totalOpen = openIssues.length;
-
-    // Calculation for responsive maintainer
-    const responsiveScore = totalOpen === 0 && totalClosed === 0 ? 0 : totalClosed / (totalClosed + totalOpen);
-
-    return Math.min(responsiveScore, 1); // Make sure the score is between 0 and 1
-  } catch (error: any) {
-    console.error(`Error calculating Responsive Maintainer metric: ${error.message}`);
-    return 0;
-  }
 }
