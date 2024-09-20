@@ -81,8 +81,8 @@ async function processGithubUrl(url: string, results: any) {
   // Calculate Ramp Up metric
   await cloneRepo(url, localPath);
   const rampUpStartTime = performance.performance.now();
-  const { ratio, sloc, comments } = await calculateRampUpMetric(localPath);
-  results.RampUp = ratio.toFixed(2);
+  const rampUpScore = await calculateRampUpMetric(localPath);
+  results.RampUp = rampUpScore.toFixed(2);
   results.RampUp_Latency = (((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3));
 
   //calculate corectness metric

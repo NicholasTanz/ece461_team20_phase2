@@ -83,9 +83,9 @@ export async function cloneRepo(url: string, localPath: string): Promise<void> {
   }
 }
 
-// Function to count Source Lines of Code (SLOC) and comments in a file (first 100 lines)
+// Function to count Source Lines of Code (SLOC) and comments in a file (first 500 lines)
 function countSlocAndCommentsLimited(fileContent: string): { sloc: number, comments: number } {
-  const lines = fileContent.split('\n').slice(0, 100); // Limit to first 100 lines
+  const lines = fileContent.split('\n').slice(0, 500); // Limit to first 500 lines
   let sloc = 0;
   let comments = 0;
   let inBlockComment = false;
@@ -115,7 +115,6 @@ function countSlocAndCommentsLimited(fileContent: string): { sloc: number, comme
 // Function to walk through a directory and process only .js or .ts files
 async function walkDirectoryLimited(dir: string, fileCallback: (filePath: string) => void) {
   const files = fs.readdirSync(dir);
-
   for (const file of files) {
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
@@ -129,16 +128,18 @@ async function walkDirectoryLimited(dir: string, fileCallback: (filePath: string
 }
 
 // Function to read the README file and extract words and non-GitHub/npm links
-function processReadme(readmeContent: string) {
+function processReadme(readmeContent: string): { wordCount: number, nonGitHubLinksCount: number } {
   const wordCount = readmeContent.split(/\s+/).length;
   const nonGitHubLinks = readmeContent.match(/https?:\/\/(?!github\.com|npmjs\.com)[^\s]+/g) || [];
-
-  // console.log(`README word count: ${wordCount}`);
-  // console.log(`Non-GitHub/npm links: ${nonGitHubLinks.length}`);
+  
+  return {
+    wordCount,
+    nonGitHubLinksCount: nonGitHubLinks.length
+  };
 }
 
 // Function to calculate the "Ramp Up" metric
-export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: number, comments: number, ratio: number }> {
+export async function calculateRampUpMetric(localPath: string): Promise<number> {
   let totalSloc = 0;
   let totalComments = 0;
 
@@ -150,22 +151,35 @@ export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: 
     totalComments += comments;
   });
 
-  const ratio = totalComments / totalSloc;
-  const repoName = path.basename(localPath);
-
-  // console.log(`Repository: ${repoName}`);
-  // console.log(`SLOC: ${totalSloc}, Comments: ${totalComments}, Ratio: ${ratio}`);
+  const ratioOfSloc = totalSloc > 0 ? totalComments / totalSloc : 0;
 
   // Process README file if it exists
   const readmePath = path.join(localPath, 'README.md');
+  let rampUpScore = 0;
+
   if (fs.existsSync(readmePath)) {
     const readmeContent = fs.readFileSync(readmePath, 'utf8');
-    processReadme(readmeContent);
+    const { wordCount, nonGitHubLinksCount } = processReadme(readmeContent);
+
+    // Apply the formula for RampUpScore    
+    //console.log(`${localPath}`);
+    const nonGitHubLinksCountScore = (nonGitHubLinksCount / 3) * 0.1;
+    //console.log(`nonGitHubLinksCountScore: ${nonGitHubLinksCountScore}`);
+    const readMeWordCountScore = ((wordCount / 80) * 0.1);
+    //console.log(`readMeWordCountScore: ${readMeWordCountScore}`);
+    const SLOCRatioScore = (ratioOfSloc * 2);
+    //console.log(`SLOCRatioScore: ${SLOCRatioScore}`);
+    rampUpScore = SLOCRatioScore + readMeWordCountScore + nonGitHubLinksCountScore;
+    rampUpScore = Math.min(rampUpScore, 1.0);
+    //console.log(`rampUpScore: ${rampUpScore}`);
+
+
   } else {
-    // console.log('No README file found.');
+    // No README file, RampUpScore is 0
+    rampUpScore = 0;
   }
 
-  return { sloc: totalSloc, comments: totalComments, ratio };
+  return rampUpScore;
 }
 
 
