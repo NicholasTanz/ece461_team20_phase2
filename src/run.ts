@@ -4,7 +4,7 @@ dotenv.config();
 //console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
 import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
 import logger, { flushLogs } from './logger';
-import { test } from './test'; 
+import { test, runMochaTests } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -171,9 +171,13 @@ async function main() {
     await processAllUrls(urls);
   } else if (command === 'test') { // "./run test" command is right here
     console.log('Test running...');
-    //call test() 
-    await test(); //test will output all error messages on it's own, don't need to handle here.
-    console.log('Test completed.');
+    // Call the exported Mocha test function from test.ts
+    try {
+        await runMochaTests();  // Run Mocha tests programmatically
+        console.log('Test completed.');
+    } catch (error) {
+        console.error('Test failed:', error);
+    }
     await flushLogs(); //makes sure logger finished writing
   } else {
     console.error('Usage: ./run install | ./run <FILE_PATH>');

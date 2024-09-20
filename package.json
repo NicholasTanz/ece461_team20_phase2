@@ -17,7 +17,15 @@
     "winston": "^3.8.2"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.19",
+    "@types/mocha": "^10.0.8",
     "@types/node": "^18.0.0",
+    "@types/sinon": "^17.0.3",
+    "chai": "^4.4.1",
+    "minimatch": "^3.0.5",
+    "mocha": "^10.7.3",
+    "nanoid": "^3.1.31",
+    "sinon": "^19.0.2",
     "typescript": "^5.0.0"
   }
 }
