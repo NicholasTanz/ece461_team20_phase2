@@ -67,6 +67,21 @@ async function processUrl(url: string): Promise<any> {
 }
 
 async function processGithubUrl(url: string, results: any) {
+
+  //Checking for INVALIDTOKEN before continuing with 
+  try {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token || token === 'INVALIDTOKEN') {
+      console.error("Error: Invalid GitHub token provided.");
+      process.exit(1); // Exit with rc 1 for invalid token
+    }
+    // continue normally
+  } catch (error) {
+    console.error("Error while processing GitHub URL:", error);
+    process.exit(1); // Exit on any errors
+  }
+
+
   // Clone the GitHub repository locally
   const repoName = url.replace('https://github.com/', '').replace('/', '_');
   const localPath = path.join(__dirname, '..', 'repos', repoName);
@@ -188,28 +203,43 @@ async function main() {
   const command = process.argv[2];
 
   if (command === 'install') {
-    logger.info('Running "install" command');
-    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
-    const dependencies = packageJson.dependencies ? Object.keys(packageJson.dependencies) : [];
-    console.log(`${dependencies.length} dependencies installed...`);
-    process.exit(0);
+    try {
+      logger.info('Running "install" command');
+      const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
+      const dependencies = packageJson.dependencies ? Object.keys(packageJson.dependencies) : [];
+      console.log(`${dependencies.length} dependencies installed...`);
+      process.exit(0); // Exit with 0 on success
+    } catch (error) {
+      console.error("Installation error:", error);
+      process.exit(1); // Exit with 1 on failure
+    }
   } else if (command && command.endsWith('.txt')) {
     logger.info('Running URL processing from file: ' + command);  // Log file processing info
     if (!fs.existsSync(command)) {
       logger.debug("Invalid file path provided: " + command);  // Log invalid path
-      process.exit(1);
+      console.error("Error: File does not exist.");
+      process.exit(1); // Exit with 1 on failure
     }
     const fileContent = fs.readFileSync(command, 'utf-8');
     const urls = fileContent.split('\n').filter(url => url.trim() !== '');
-    await processAllUrls(urls);
+    
+    try {
+      await processAllUrls(urls);
+      process.exit(0); // Exit with 0 on successful URL processing
+    } catch (error) {
+      console.error("Error processing URLs:", error);
+      process.exit(1); // Exit with 1 if any errors occur during URL processing
+    }
   } else if (command === 'test') { // "./run test" command is right here
     console.log('Test running...');
     // Call the exported Mocha test function from test.ts
     try {
         await runMochaTests();  // Run Mocha tests programmatically
         console.log('Test completed.');
+        process.exit(0); // Exit with 0 on successful test completion
     } catch (error) {
         console.error('Test failed:', error);
+        process.exit(1); // Exit with 1 if tests fail
     }
     await flushLogs(); //makes sure logger finished writing
   } else {
