@@ -86,7 +86,7 @@ export async function cloneRepo(url: string, localPath: string): Promise<void> {
   logger.info(`Cloning GitHub repo for Ramp Up calculation: ${url} into ${localPath}`);
 
   try {
-    await git.clone(url, localPath);
+    await git.clone(url, localPath, ['--depth', '1']);
     logger.info(`Cloning completed successfully for ${url}`);
   } catch (error: any) {
     logger.debug(`Error cloning repo ${url}: ${error.message}`);

@@ -153,7 +153,6 @@ async function processNpmUrl(url: string, results: any) {
 
 async function processAllUrls(urls: string[]) {
   const resultsArray: any[] = [];
-  logger.debug("test");
 
   for (const url of urls) {
     const result = await processUrl(url.trim());
