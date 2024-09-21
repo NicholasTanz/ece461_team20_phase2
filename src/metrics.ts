@@ -5,6 +5,7 @@ import * as path from 'path';
 import axios from 'axios';
 import { Octokit } from "@octokit/core";
 import logger from './logger';
+import { marked } from 'marked';
 
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
@@ -16,6 +17,8 @@ export async function getBusFactor(url: string): Promise<number> {
   const repoPath = url.replace('https://github.com/', ''); // Extract the repository path from the provided GitHub URL
   let totalContributors = 0;
   let page = 1; // Start with the first page of results as github API truncates to 100 users per page
+
+  logger.info(`Calculating Bus Factor for repository: ${url}`);
 
   try {
     // Loop through all available contributor pages from the GitHub API
@@ -39,6 +42,8 @@ export async function getBusFactor(url: string): Promise<number> {
 
       page++; // Increment the page number to fetch the next set of contributors
     }
+
+    logger.info(`Total contributors for ${url}: ${totalContributors}`);
 
     // Calculate the Bus Factor based on the total number of contributors
     let busFactorScore: number;
@@ -64,10 +69,12 @@ export async function getBusFactor(url: string): Promise<number> {
       busFactorScore = 1.0;
     }
 
+    logger.info(`Calculated Bus Factor for ${url}: ${busFactorScore}`);
+
     return busFactorScore; // Return the calculated Bus Factor score
   } catch (error: any) {
     // Handle any errors that occur during the API request
-    console.error(`Error fetching contributors for GitHub repo ${url}:`, error.message);
+    logger.debug(`Error fetching contributors for GitHub repo ${url}: ${error.message}`);
     return -1; // Return -1 to indicate failure
   }
 }
@@ -75,11 +82,14 @@ export async function getBusFactor(url: string): Promise<number> {
 
 // Function to clone a GitHub repository locally using simple-git
 export async function cloneRepo(url: string, localPath: string): Promise<void> {
-  const git = simpleGit(); // Create an instance of simple-git for performing git operations
+  const git = simpleGit();
+  logger.info(`Cloning GitHub repo for Ramp Up calculation: ${url} into ${localPath}`);
+
   try {
-    await git.clone(url, localPath); // Clone the GitHub repository into the specified local directory
+    await git.clone(url, localPath);
+    logger.info(`Cloning completed successfully for ${url}`);
   } catch (error: any) {
-    //console.error(`Error cloning repo: ${error.message}`); // Log any errors that occur during cloning
+    logger.debug(`Error cloning repo ${url}: ${error.message}`);
   }
 }
 
@@ -130,16 +140,36 @@ async function walkDirectoryLimited(dir: string, fileCallback: (filePath: string
 // Function to read the README file and extract words and non-GitHub/npm links
 function processReadme(readmeContent: string): { wordCount: number, nonGitHubLinksCount: number } {
   const wordCount = readmeContent.split(/\s+/).length;
-  const nonGitHubLinks = readmeContent.match(/https?:\/\/(?!github\.com|npmjs\.com)[^\s]+/g) || [];
-  
+
+  // Create a list to store the URLs found in the README
+  const links: string[] = [];
+
+  // Use a Markdown parser to find embedded links
+  const renderer = new marked.Renderer();
+  renderer.link = ({ href, title, tokens }) => {
+    links.push(href); // Collect the href
+    return ''; // Return an empty string since we just need to collect the links
+  };
+
+  marked(readmeContent, { renderer });
+
+  // Filter out GitHub and npm links, and keep only valid HTTPS links
+  const nonGitHubLinks = links.filter((link) => 
+    link.startsWith('https://') && 
+    !link.includes('github.com') && 
+    !link.includes('npmjs.com')
+  );
+
   return {
     wordCount,
-    nonGitHubLinksCount: nonGitHubLinks.length
+    nonGitHubLinksCount: nonGitHubLinks.length,
   };
 }
 
+
 // Function to calculate the "Ramp Up" metric
 export async function calculateRampUpMetric(localPath: string): Promise<number> {
+  logger.info(`Calculating Ramp Up metric for repo at ${localPath}`);
   let totalSloc = 0;
   let totalComments = 0;
 
@@ -162,20 +192,15 @@ export async function calculateRampUpMetric(localPath: string): Promise<number> 
     const { wordCount, nonGitHubLinksCount } = processReadme(readmeContent);
 
     // Apply the formula for RampUpScore    
-    //console.log(`${localPath}`);
     const nonGitHubLinksCountScore = (nonGitHubLinksCount / 3) * 0.1;
-    //console.log(`nonGitHubLinksCountScore: ${nonGitHubLinksCountScore}`);
     const readMeWordCountScore = ((wordCount / 80) * 0.1);
-    //console.log(`readMeWordCountScore: ${readMeWordCountScore}`);
     const SLOCRatioScore = (ratioOfSloc * 2);
-    //console.log(`SLOCRatioScore: ${SLOCRatioScore}`);
     rampUpScore = SLOCRatioScore + readMeWordCountScore + nonGitHubLinksCountScore;
     rampUpScore = Math.min(rampUpScore, 1.0);
-    //console.log(`rampUpScore: ${rampUpScore}`);
-
-
+    logger.info(`Calculated Ramp Up score for ${localPath}: ${rampUpScore}`);
   } else {
     // No README file, RampUpScore is 0
+    logger.info('No README file found, Ramp Up score is 0');
     rampUpScore = 0;
   }
 

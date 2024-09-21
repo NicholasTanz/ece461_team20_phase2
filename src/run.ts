@@ -28,17 +28,20 @@ async function processUrl(url: string): Promise<any> {
     License_Latency: '-1'
   };
 
+  logger.info("Processing URL: " + url);
   if (url.startsWith('https://github.com/')) {
     await processGithubUrl(url, results);
   } else if (url.startsWith('https://www.npmjs.com/package/')) {
     await processNpmUrl(url, results);
   } else {
-    return null; // Return null if URL isn't valid
+    logger.debug("Invalid URL path provided: " + url);
+    return null;
   }
 
   results.NetScore_Latency = ((performance.performance.now() - netScoreStartTime) / 1000).toFixed(3);
 
   // Calculate NetScore (Use -1 where metrics are not yet implemented)
+  logger.info("Calculating NetScore for URL: " + url);
   if (
     parseFloat(results.License) === 0 || 
     results.License === '-1' ||   
@@ -58,6 +61,7 @@ async function processUrl(url: string): Promise<any> {
     );
     results.NetScore = netScore.toFixed(2);
   }
+  logger.info("Finished processing URL: " + url + " with NetScore: " + results.NetScore);
   // Return results
   return results;
 }
@@ -77,9 +81,15 @@ async function processGithubUrl(url: string, results: any) {
   if (!fs.existsSync(localPath)) {
     fs.mkdirSync(path.join(__dirname, '..', 'repos'), { recursive: true });
   }
+  logger.info("Cloning GitHub repo for Ramp Up calculation: " + repoName);  // Log repo cloning info
+
+  try {
+    await cloneRepo(url, localPath);
+  } catch (error) {
+    logger.debug("Failed to clone GitHub repository: " + repoName);
+  }
 
   // Calculate Ramp Up metric
-  await cloneRepo(url, localPath);
   const rampUpStartTime = performance.performance.now();
   const rampUpScore = await calculateRampUpMetric(localPath);
   results.RampUp = rampUpScore.toFixed(2);
@@ -126,31 +136,36 @@ async function processNpmUrl(url: string, results: any) {
         githubUrl = `https://${githubUrl}`;
       }
 
+      logger.info("Found GitHub URL for npm package: " + packageName);
+
       // Now call function with guthub corrected URL
       await processGithubUrl(githubUrl, results);
 
     } else {
       // Handle missing repository field
-      console.error(`No repository field found for npm package ${packageName}`);
+      logger.debug(`No repository field found for npm package ${packageName}`);
     }
   } catch (error) {
-    console.error(`Error processing npm package ${packageName}:`, error);
+    logger.debug(`Error processing npm package ${packageName}: ${error}`);
   }
 }
 
 
 async function processAllUrls(urls: string[]) {
   const resultsArray: any[] = [];
+  logger.debug("test");
 
   for (const url of urls) {
     const result = await processUrl(url.trim());
     if (result) {
       resultsArray.push(result);
-    }
+    } 
   }
 
   // Sort results by NetScore from highest to lowest
   resultsArray.sort((a, b) => parseFloat(b.NetScore) - parseFloat(a.NetScore));
+
+  logger.info("Finished processing all URLs. Displaying sorted results.");
 
   // Output sorted results
   resultsArray.forEach(result => console.log(JSON.stringify(result)));
@@ -161,11 +176,17 @@ async function main() {
   const command = process.argv[2];
 
   if (command === 'install') {
+    logger.info('Running "install" command');
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
     const dependencies = packageJson.dependencies ? Object.keys(packageJson.dependencies) : [];
     console.log(`${dependencies.length} dependencies installed...`);
     process.exit(0);
   } else if (command && command.endsWith('.txt')) {
+    logger.info('Running URL processing from file: ' + command);  // Log file processing info
+    if (!fs.existsSync(command)) {
+      logger.debug("Invalid file path provided: " + command);  // Log invalid path
+      process.exit(1);
+    }
     const fileContent = fs.readFileSync(command, 'utf-8');
     const urls = fileContent.split('\n').filter(url => url.trim() !== '');
     await processAllUrls(urls);
@@ -180,12 +201,13 @@ async function main() {
     }
     await flushLogs(); //makes sure logger finished writing
   } else {
-    console.error('Usage: ./run install | ./run <FILE_PATH>');
+    logger.info("Invalid command line input");
+    logger.debug("Invalid command line input");
     process.exit(1);
   }
 }
 
 main().catch(error => {
-  console.error('An error occurred:', error);
+  logger.debug('An error occurred:', error);
   process.exit(1);
 });
