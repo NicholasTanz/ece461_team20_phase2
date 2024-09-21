@@ -67,12 +67,6 @@ async function processUrl(url: string): Promise<any> {
 }
 
 async function processGithubUrl(url: string, results: any) {
-  // Calculate Bus factor
-  const busFactorStartTime = performance.performance.now();
-  const contributorsCount = await getBusFactor(url);
-  results.BusFactor = contributorsCount >= 0 ? (contributorsCount).toFixed(2) : '-1';
-  results.BusFactor_Latency = ((performance.performance.now() - busFactorStartTime) / 1000).toFixed(3);
-
   // Clone the GitHub repository locally
   const repoName = url.replace('https://github.com/', '').replace('/', '_');
   const localPath = path.join(__dirname, '..', 'repos', repoName);
@@ -81,38 +75,57 @@ async function processGithubUrl(url: string, results: any) {
   if (!fs.existsSync(localPath)) {
     fs.mkdirSync(path.join(__dirname, '..', 'repos'), { recursive: true });
   }
-  logger.info("Cloning GitHub repo for Ramp Up calculation: " + repoName);  // Log repo cloning info
-
+  
+  logger.info("Cloning GitHub repo for metrics calculation: " + repoName);
   try {
     await cloneRepo(url, localPath);
   } catch (error) {
     logger.debug("Failed to clone GitHub repository: " + repoName);
   }
 
-  // Calculate Ramp Up metric
-  const rampUpStartTime = performance.performance.now();
-  const rampUpScore = await calculateRampUpMetric(localPath);
-  results.RampUp = rampUpScore.toFixed(2);
-  results.RampUp_Latency = (((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3));
+  // Start measuring latencies
+  const startTimes = {
+    busFactor: performance.performance.now(),
+    rampUp: performance.performance.now(),
+    correctness: performance.performance.now(),
+    responsiveMaintainer: performance.performance.now(),
+    license: performance.performance.now(),
+  };
 
-  //calculate corectness metric
-  const CorrectnessStartTime = performance.performance.now();
-  const test_ratio = await calculateCorrectnessMetric(localPath);
-  results.Correctness = test_ratio.toFixed(2);
-  results.Correctness_Latency = (((performance.performance.now() - CorrectnessStartTime) / 1000).toFixed(3));
-  
-  // Calculate Responsive Maintainer metric
-  const responsiveMaintainerStartTime = performance.performance.now();
-  const responsiveMaintainerScore = await calculateResponsiveMaintainerMetric(url);
-  results.ResponsiveMaintainer = responsiveMaintainerScore.toFixed(2);
-  results.ResponsiveMaintainer_Latency = ((performance.performance.now() - responsiveMaintainerStartTime) / 1000).toFixed(3);  
-
-  // Check license compatibility
-  const licenseStartTime = performance.performance.now();
-  const licenseResult = await checkLicenseCompatibility(url);
-  results.License = licenseResult.score.toFixed(2);
-  results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
-
+  // Run all metrics in parallel
+  const [
+    contributorsCount,
+    rampUpScore,
+    test_ratio,
+    responsiveMaintainerScore,
+    licenseResult
+  ] = await Promise.all([
+    getBusFactor(url).then(count => {
+      results.BusFactor = count >= 0 ? count.toFixed(2) : '-1';
+      results.BusFactor_Latency = ((performance.performance.now() - startTimes.busFactor) / 1000).toFixed(3);
+      return results.BusFactor;
+    }),
+    calculateRampUpMetric(localPath).then(score => {
+      results.RampUp = score.toFixed(2);
+      results.RampUp_Latency = ((performance.performance.now() - startTimes.rampUp) / 1000).toFixed(3);
+      return results.RampUp;
+    }),
+    calculateCorrectnessMetric(localPath).then(test_ratio => {
+      results.Correctness = test_ratio.toFixed(2);
+      results.Correctness_Latency = ((performance.performance.now() - startTimes.correctness) / 1000).toFixed(3);
+      return results.Correctness;
+    }),
+    calculateResponsiveMaintainerMetric(url).then(score => {
+      results.ResponsiveMaintainer = score.toFixed(2);
+      results.ResponsiveMaintainer_Latency = ((performance.performance.now() - startTimes.responsiveMaintainer) / 1000).toFixed(3);
+      return results.ResponsiveMaintainer;
+    }),
+    checkLicenseCompatibility(url).then(licenseResult => {
+      results.License = licenseResult.score.toFixed(2);
+      results.License_Latency = ((performance.performance.now() - startTimes.license) / 1000).toFixed(3);
+      return results.License;
+    })
+  ]);
 }
 
 async function processNpmUrl(url: string, results: any) {
