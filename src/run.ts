@@ -1,3 +1,17 @@
+/*
+File Name: 
+  run.ts
+
+Function: 
+  - The function of this file is to take in the input from the command line (being ./run install, ./run URL, and ./run test).
+  - For the install function it should install the the necessary dependanies needed in order for the code to run.
+  - The URL function will take a path to a file that has URLs of GitHub and npm repositories. It will then perform calculations
+  and make calls on these repostiories in order to print out a netscore. These calculations are dont in metrics.ts
+  - The test function should run a series of tests on the code by inputing sample URLs to check the total coverage that this 
+  project has. This code is in test.ts.
+*/
+
+
 import dotenv from 'dotenv';
 dotenv.config();
 
