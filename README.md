@@ -4,7 +4,7 @@ Team Members: Alex Beuerle, Sayim Shazlee, Nicholas Viardo, Dhruv Chaudhary
 
 
 
-Purpose:
+# Purpose:
 The main purpose of this project is to take in a number of URLs from a file of GitHub and npm repositories and assign 
 a score to them based on 5 metrics we have elected to use. Below is documentation that includes how to set up the code,
 how to interact with it onces it has been set up, the metrics we use to calculate netScore and their justification. 
@@ -13,7 +13,7 @@ how to interact with it onces it has been set up, the metrics we use to calculat
 
 
 
-# Set-up instruction:
+## Set-up instruction:
 Instructions to run on local:
 1) "git clone https://github.com/abeuerle/ECE461.git"
 2) chmod +x ./run                                          //To give executing permision to the run file
@@ -36,7 +36,7 @@ Instructions to run on ecenprog:
 
 
 
-How to interact with the project:
+## How to interact with the project:
   - The function of this file is to take in the input from the command line (being ./run install, ./run URL, and ./run test).
   - For the install function it should install the the necessary dependanies needed in order for the code to run.
   - The URL function will take a path to a file that has URLs of GitHub and npm repositories. It will then perform calculations
@@ -48,7 +48,7 @@ How to interact with the project:
 
 
 
-What metrics we use to calcualte NetScore and our justifiication:
+## What metrics we use to calcualte NetScore and our justifiication:
   = Bus Factor: This metric measures essentially how many people are working on the code. Basically, how many people
   can be "hit by a bus" and there still be enough people to update the repository. We elected to measure this by the total
   number of contributors, we used a exponential scale and used our personal engineering judgement to assign a score to
