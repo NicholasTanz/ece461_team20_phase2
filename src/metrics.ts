@@ -1,3 +1,28 @@
+/*
+File Name: 
+  metrics.ts
+
+Function: 
+  - This function performs the calculations on each metric in order to calculate:
+
+  = Bus Factor: This metric measures essentially how many people are working on the code. Basically, how many people
+  can be "hit by a bus" and there still be enough people to update the repository. We elected to measure this by the total
+  number of contributors, we used a exponential scale and used our personal engineering judgement to assign a score to
+  each number of contributors. 
+
+  = Ramp Up Time: This metrics measures essentially the amount of documentation surrounding the code. Basically, how
+  quickly can you clone this reposity and understand how to implement it. We elected to calculate this metric by 4 sub-factors:
+  the number of words in the readme, the ratio of comments to source lines of code, number of links in the readme that take you
+  to a non GitHub/npm link, and if no readme was present assign the ramp up score a 0. We then assigned a multiplier to each factor
+  by looking at a number of URLs and using our best engineering judgement to assign weights. 
+
+  Correctness:
+
+  Responsive Maintainer:
+
+  License: 
+*/
+
 import simpleGit from 'simple-git';
 import * as fs from 'fs';
 import * as fsp from 'fs/promises'
