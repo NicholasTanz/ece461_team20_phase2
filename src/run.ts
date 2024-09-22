@@ -18,11 +18,12 @@ dotenv.config();
 //console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
 import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
 import logger, { flushLogs } from './logger';
-import { test, runMochaTests } from './test'; 
+import { runMochaTests } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
+import { exec } from 'child_process';
 
 async function processUrl(url: string): Promise<any> {
   const netScoreStartTime = performance.performance.now();
@@ -219,6 +220,7 @@ async function processAllUrls(urls: string[]) {
   resultsArray.forEach(result => console.log(JSON.stringify(result)));
 }
 
+
 async function main() {
   require('dotenv').config(); // Necessary for GITHUB_TOKEN
   const command = process.argv[2];
@@ -253,16 +255,17 @@ async function main() {
     }
   } else if (command === 'test') { // "./run test" command is right here
     console.log('Test running...');
-    // Call the exported Mocha test function from test.ts
-    try {
-        await runMochaTests();  // Run Mocha tests programmatically
-        console.log('Test completed.');
-        process.exit(0); // Exit with 0 on successful test completion
-    } catch (error) {
-        console.error('Test failed:', error);
-        process.exit(1); // Exit with 1 if tests fail
-    }
-    await flushLogs(); //makes sure logger finished writing
+    exec('npx mocha dist/test.js', (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Test failed: ${stderr}`);
+          process.exit(1); // Exit with 1 if tests fail
+      } else {
+          console.log(stdout);
+          console.log('Test completed.');
+          process.exit(0); // Exit with 0 on successful test completion
+      }
+  });
+  await flushLogs(); // Make sure logger finished writing // NOTE: THIS PIECE OF SHIT LINE WILL NOT RUN NO MATTER WHAT I CHANGE
   } else {
     logger.info("Invalid command line input");
     logger.debug("Invalid command line input");
