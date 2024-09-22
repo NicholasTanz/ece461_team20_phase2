@@ -1,4 +1,4 @@
-import winston from 'winston';
+import * as winston from 'winston';
 
 // Get environment variables
 const logFile = process.env.LOG_FILE || 'logs/app.log'; // Default log file location if not provided

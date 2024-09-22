@@ -1,10 +1,24 @@
+/*
+File Name: 
+  run.ts
+
+Function: 
+  - The function of this file is to take in the input from the command line (being ./run install, ./run URL, and ./run test).
+  - For the install function it should install the the necessary dependanies needed in order for the code to run.
+  - The URL function will take a path to a file that has URLs of GitHub and npm repositories. It will then perform calculations
+  and make calls on these repostiories in order to print out a netscore. These calculations are dont in metrics.ts
+  - The test function should run a series of tests on the code by inputing sample URLs to check the total coverage that this 
+  project has. This code is in test.ts.
+*/
+
+
 import dotenv from 'dotenv';
 dotenv.config();
 
 //console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
 import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
 import logger, { flushLogs } from './logger';
-import { test } from './test'; 
+import { test, runMochaTests } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -28,17 +42,20 @@ async function processUrl(url: string): Promise<any> {
     License_Latency: '-1'
   };
 
+  logger.info("Processing URL: " + url);
   if (url.startsWith('https://github.com/')) {
     await processGithubUrl(url, results);
   } else if (url.startsWith('https://www.npmjs.com/package/')) {
     await processNpmUrl(url, results);
   } else {
-    return null; // Return null if URL isn't valid
+    logger.debug("Invalid URL path provided: " + url);
+    return null;
   }
 
   results.NetScore_Latency = ((performance.performance.now() - netScoreStartTime) / 1000).toFixed(3);
 
   // Calculate NetScore (Use -1 where metrics are not yet implemented)
+  logger.info("Calculating NetScore for URL: " + url);
   if (
     parseFloat(results.License) === 0 || 
     results.License === '-1' ||   
@@ -58,16 +75,26 @@ async function processUrl(url: string): Promise<any> {
     );
     results.NetScore = netScore.toFixed(2);
   }
+  logger.info("Finished processing URL: " + url + " with NetScore: " + results.NetScore);
   // Return results
   return results;
 }
 
 async function processGithubUrl(url: string, results: any) {
-  // Calculate Bus factor
-  const busFactorStartTime = performance.performance.now();
-  const contributorsCount = await getBusFactor(url);
-  results.BusFactor = contributorsCount >= 0 ? (contributorsCount).toFixed(2) : '-1';
-  results.BusFactor_Latency = ((performance.performance.now() - busFactorStartTime) / 1000).toFixed(3);
+
+  //Checking for INVALIDTOKEN before continuing with 
+  try {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token || token === 'INVALIDTOKEN') {
+      console.error("Error: Invalid GitHub token provided.");
+      process.exit(1); // Exit with rc 1 for invalid token
+    }
+    // continue normally
+  } catch (error) {
+    console.error("Error while processing GitHub URL:", error);
+    process.exit(1); // Exit on any errors
+  }
+
 
   // Clone the GitHub repository locally
   const repoName = url.replace('https://github.com/', '').replace('/', '_');
@@ -77,32 +104,57 @@ async function processGithubUrl(url: string, results: any) {
   if (!fs.existsSync(localPath)) {
     fs.mkdirSync(path.join(__dirname, '..', 'repos'), { recursive: true });
   }
-
-  // Calculate Ramp Up metric
-  await cloneRepo(url, localPath);
-  const rampUpStartTime = performance.performance.now();
-  const { ratio, sloc, comments } = await calculateRampUpMetric(localPath);
-  results.RampUp = ratio.toFixed(2);
-  results.RampUp_Latency = (((performance.performance.now() - rampUpStartTime) / 1000).toFixed(3));
-
-  //calculate corectness metric
-  const CorrectnessStartTime = performance.performance.now();
-  const test_ratio = await calculateCorrectnessMetric(localPath);
-  results.Correctness = test_ratio.toFixed(2);
-  results.Correctness_Latency = (((performance.performance.now() - CorrectnessStartTime) / 1000).toFixed(3));
   
-  // Calculate Responsive Maintainer metric
-  const responsiveMaintainerStartTime = performance.performance.now();
-  const responsiveMaintainerScore = await calculateResponsiveMaintainerMetric(url);
-  results.ResponsiveMaintainer = responsiveMaintainerScore.toFixed(2);
-  results.ResponsiveMaintainer_Latency = ((performance.performance.now() - responsiveMaintainerStartTime) / 1000).toFixed(3);  
+  logger.info("Cloning GitHub repo for metrics calculation: " + repoName);
+  try {
+    await cloneRepo(url, localPath);
+  } catch (error) {
+    logger.debug("Failed to clone GitHub repository: " + repoName);
+  }
 
-  // Check license compatibility
-  const licenseStartTime = performance.performance.now();
-  const licenseResult = await checkLicenseCompatibility(url);
-  results.License = licenseResult.score.toFixed(2);
-  results.License_Latency = ((performance.performance.now() - licenseStartTime) / 1000).toFixed(3);
+  // Start measuring latencies
+  const startTimes = {
+    busFactor: performance.performance.now(),
+    rampUp: performance.performance.now(),
+    correctness: performance.performance.now(),
+    responsiveMaintainer: performance.performance.now(),
+    license: performance.performance.now(),
+  };
 
+  // Run all metrics in parallel
+  const [
+    contributorsCount,
+    rampUpScore,
+    test_ratio,
+    responsiveMaintainerScore,
+    licenseResult
+  ] = await Promise.all([
+    getBusFactor(url).then(count => {
+      results.BusFactor = count >= 0 ? count.toFixed(2) : '-1';
+      results.BusFactor_Latency = ((performance.performance.now() - startTimes.busFactor) / 1000).toFixed(3);
+      return results.BusFactor;
+    }),
+    calculateRampUpMetric(localPath).then(score => {
+      results.RampUp = score.toFixed(2);
+      results.RampUp_Latency = ((performance.performance.now() - startTimes.rampUp) / 1000).toFixed(3);
+      return results.RampUp;
+    }),
+    calculateCorrectnessMetric(localPath).then(test_ratio => {
+      results.Correctness = test_ratio.toFixed(2);
+      results.Correctness_Latency = ((performance.performance.now() - startTimes.correctness) / 1000).toFixed(3);
+      return results.Correctness;
+    }),
+    calculateResponsiveMaintainerMetric(url).then(score => {
+      results.ResponsiveMaintainer = score.toFixed(2);
+      results.ResponsiveMaintainer_Latency = ((performance.performance.now() - startTimes.responsiveMaintainer) / 1000).toFixed(3);
+      return results.ResponsiveMaintainer;
+    }),
+    checkLicenseCompatibility(url).then(licenseResult => {
+      results.License = licenseResult.score.toFixed(2);
+      results.License_Latency = ((performance.performance.now() - startTimes.license) / 1000).toFixed(3);
+      return results.License;
+    })
+  ]);
 }
 
 async function processNpmUrl(url: string, results: any) {
@@ -126,15 +178,17 @@ async function processNpmUrl(url: string, results: any) {
         githubUrl = `https://${githubUrl}`;
       }
 
+      logger.info("Found GitHub URL for npm package: " + packageName);
+
       // Now call function with guthub corrected URL
       await processGithubUrl(githubUrl, results);
 
     } else {
       // Handle missing repository field
-      console.error(`No repository field found for npm package ${packageName}`);
+      logger.debug(`No repository field found for npm package ${packageName}`);
     }
   } catch (error) {
-    console.error(`Error processing npm package ${packageName}:`, error);
+    logger.debug(`Error processing npm package ${packageName}: ${error}`);
   }
 }
 
@@ -146,11 +200,13 @@ async function processAllUrls(urls: string[]) {
     const result = await processUrl(url.trim());
     if (result) {
       resultsArray.push(result);
-    }
+    } 
   }
 
   // Sort results by NetScore from highest to lowest
   resultsArray.sort((a, b) => parseFloat(b.NetScore) - parseFloat(a.NetScore));
+
+  logger.info("Finished processing all URLs. Displaying sorted results.");
 
   // Output sorted results
   resultsArray.forEach(result => console.log(JSON.stringify(result)));
@@ -161,27 +217,53 @@ async function main() {
   const command = process.argv[2];
 
   if (command === 'install') {
-    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
-    const dependencies = packageJson.dependencies ? Object.keys(packageJson.dependencies) : [];
-    console.log(`${dependencies.length} dependencies installed...`);
-    process.exit(0);
+    try {
+      logger.info('Running "install" command');
+      const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
+      const dependencies = packageJson.dependencies ? Object.keys(packageJson.dependencies) : [];
+      console.log(`${dependencies.length} dependencies installed...`);
+      process.exit(0); // Exit with 0 on success
+    } catch (error) {
+      console.error("Installation error:", error);
+      process.exit(1); // Exit with 1 on failure
+    }
   } else if (command && command.endsWith('.txt')) {
+    logger.info('Running URL processing from file: ' + command);  // Log file processing info
+    if (!fs.existsSync(command)) {
+      logger.debug("Invalid file path provided: " + command);  // Log invalid path
+      console.error("Error: File does not exist.");
+      process.exit(1); // Exit with 1 on failure
+    }
     const fileContent = fs.readFileSync(command, 'utf-8');
     const urls = fileContent.split('\n').filter(url => url.trim() !== '');
-    await processAllUrls(urls);
+    
+    try {
+      await processAllUrls(urls);
+      process.exit(0); // Exit with 0 on successful URL processing
+    } catch (error) {
+      console.error("Error processing URLs:", error);
+      process.exit(1); // Exit with 1 if any errors occur during URL processing
+    }
   } else if (command === 'test') { // "./run test" command is right here
     console.log('Test running...');
-    //call test() 
-    await test(); //test will output all error messages on it's own, don't need to handle here.
-    console.log('Test completed.');
+    // Call the exported Mocha test function from test.ts
+    try {
+        await runMochaTests();  // Run Mocha tests programmatically
+        console.log('Test completed.');
+        process.exit(0); // Exit with 0 on successful test completion
+    } catch (error) {
+        console.error('Test failed:', error);
+        process.exit(1); // Exit with 1 if tests fail
+    }
     await flushLogs(); //makes sure logger finished writing
   } else {
-    console.error('Usage: ./run install | ./run <FILE_PATH>');
+    logger.info("Invalid command line input");
+    logger.debug("Invalid command line input");
     process.exit(1);
   }
 }
 
 main().catch(error => {
-  console.error('An error occurred:', error);
+  logger.debug('An error occurred:', error);
   process.exit(1);
 });

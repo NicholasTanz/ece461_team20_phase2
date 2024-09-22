@@ -1,3 +1,28 @@
+/*
+File Name: 
+  metrics.ts
+
+Function: 
+  - This function performs the calculations on each metric in order to calculate:
+
+  = Bus Factor: This metric measures essentially how many people are working on the code. Basically, how many people
+  can be "hit by a bus" and there still be enough people to update the repository. We elected to measure this by the total
+  number of contributors, we used a exponential scale and used our personal engineering judgement to assign a score to
+  each number of contributors. 
+
+  = Ramp Up Time: This metrics measures essentially the amount of documentation surrounding the code. Basically, how
+  quickly can you clone this reposity and understand how to implement it. We elected to calculate this metric by 4 sub-factors:
+  the number of words in the readme, the ratio of comments to source lines of code, number of links in the readme that take you
+  to a non GitHub/npm link, and if no readme was present assign the ramp up score a 0. We then assigned a multiplier to each factor
+  by looking at a number of URLs and using our best engineering judgement to assign weights. 
+
+  Correctness:
+
+  Responsive Maintainer:
+
+  License: 
+*/
+
 import simpleGit from 'simple-git';
 import * as fs from 'fs';
 import * as fsp from 'fs/promises'
@@ -5,17 +30,26 @@ import * as path from 'path';
 import axios from 'axios';
 import { Octokit } from "@octokit/core";
 import logger from './logger';
+import { marked } from 'marked';
+import fetch from 'node-fetch';
 
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
 const PER_PAGE = 100; // GitHub API truncates certain number of contributors
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
-const octokit = new Octokit({ auth: GITHUB_TOKEN }); // Create an authenticated Octokit instance
+const octokit = new Octokit({ 
+  auth: GITHUB_TOKEN,
+  request: {
+    fetch: fetch as any
+  }
+}); // Create an authenticated Octokit instance
 
 export async function getBusFactor(url: string): Promise<number> {
   const repoPath = url.replace('https://github.com/', ''); // Extract the repository path from the provided GitHub URL
   let totalContributors = 0;
   let page = 1; // Start with the first page of results as github API truncates to 100 users per page
+
+  logger.info(`Calculating Bus Factor for repository: ${url}`);
 
   try {
     // Loop through all available contributor pages from the GitHub API
@@ -39,6 +73,8 @@ export async function getBusFactor(url: string): Promise<number> {
 
       page++; // Increment the page number to fetch the next set of contributors
     }
+
+    logger.info(`Total contributors for ${url}: ${totalContributors}`);
 
     // Calculate the Bus Factor based on the total number of contributors
     let busFactorScore: number;
@@ -64,10 +100,12 @@ export async function getBusFactor(url: string): Promise<number> {
       busFactorScore = 1.0;
     }
 
+    logger.info(`Calculated Bus Factor for ${url}: ${busFactorScore}`);
+
     return busFactorScore; // Return the calculated Bus Factor score
   } catch (error: any) {
     // Handle any errors that occur during the API request
-    console.error(`Error fetching contributors for GitHub repo ${url}:`, error.message);
+    logger.debug(`Error fetching contributors for GitHub repo ${url}: ${error.message}`);
     return -1; // Return -1 to indicate failure
   }
 }
@@ -75,17 +113,20 @@ export async function getBusFactor(url: string): Promise<number> {
 
 // Function to clone a GitHub repository locally using simple-git
 export async function cloneRepo(url: string, localPath: string): Promise<void> {
-  const git = simpleGit(); // Create an instance of simple-git for performing git operations
+  const git = simpleGit();
+  logger.info(`Cloning GitHub repo for Ramp Up calculation: ${url} into ${localPath}`);
+
   try {
-    await git.clone(url, localPath); // Clone the GitHub repository into the specified local directory
+    await git.clone(url, localPath, ['--depth', '1']);
+    logger.info(`Cloning completed successfully for ${url}`);
   } catch (error: any) {
-    //console.error(`Error cloning repo: ${error.message}`); // Log any errors that occur during cloning
+    logger.debug(`Error cloning repo ${url}: ${error.message}`);
   }
 }
 
-// Function to count Source Lines of Code (SLOC) and comments in a file (first 100 lines)
+// Function to count Source Lines of Code (SLOC) and comments in a file (first 500 lines)
 function countSlocAndCommentsLimited(fileContent: string): { sloc: number, comments: number } {
-  const lines = fileContent.split('\n').slice(0, 100); // Limit to first 100 lines
+  const lines = fileContent.split('\n').slice(0, 500); // Limit to first 500 lines
   let sloc = 0;
   let comments = 0;
   let inBlockComment = false;
@@ -115,7 +156,6 @@ function countSlocAndCommentsLimited(fileContent: string): { sloc: number, comme
 // Function to walk through a directory and process only .js or .ts files
 async function walkDirectoryLimited(dir: string, fileCallback: (filePath: string) => void) {
   const files = fs.readdirSync(dir);
-
   for (const file of files) {
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
@@ -129,16 +169,38 @@ async function walkDirectoryLimited(dir: string, fileCallback: (filePath: string
 }
 
 // Function to read the README file and extract words and non-GitHub/npm links
-function processReadme(readmeContent: string) {
+function processReadme(readmeContent: string): { wordCount: number, nonGitHubLinksCount: number } {
   const wordCount = readmeContent.split(/\s+/).length;
-  const nonGitHubLinks = readmeContent.match(/https?:\/\/(?!github\.com|npmjs\.com)[^\s]+/g) || [];
 
-  // console.log(`README word count: ${wordCount}`);
-  // console.log(`Non-GitHub/npm links: ${nonGitHubLinks.length}`);
+  // Create a list to store the URLs found in the README
+  const links: string[] = [];
+
+  // Use a Markdown parser to find embedded links
+  const renderer = new marked.Renderer();
+  renderer.link = ({ href, title, tokens }) => {
+    links.push(href); // Collect the href
+    return ''; // Return an empty string since we just need to collect the links
+  };
+
+  marked(readmeContent, { renderer });
+
+  // Filter out GitHub and npm links, and keep only valid HTTPS links
+  const nonGitHubLinks = links.filter((link) => 
+    link.startsWith('https://') && 
+    !link.includes('github.com') && 
+    !link.includes('npmjs.com')
+  );
+
+  return {
+    wordCount,
+    nonGitHubLinksCount: nonGitHubLinks.length,
+  };
 }
 
+
 // Function to calculate the "Ramp Up" metric
-export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: number, comments: number, ratio: number }> {
+export async function calculateRampUpMetric(localPath: string): Promise<number> {
+  logger.info(`Calculating Ramp Up metric for repo at ${localPath}`);
   let totalSloc = 0;
   let totalComments = 0;
 
@@ -150,22 +212,30 @@ export async function calculateRampUpMetric(localPath: string): Promise<{ sloc: 
     totalComments += comments;
   });
 
-  const ratio = totalComments / totalSloc;
-  const repoName = path.basename(localPath);
-
-  // console.log(`Repository: ${repoName}`);
-  // console.log(`SLOC: ${totalSloc}, Comments: ${totalComments}, Ratio: ${ratio}`);
+  const ratioOfSloc = totalSloc > 0 ? totalComments / totalSloc : 0;
 
   // Process README file if it exists
   const readmePath = path.join(localPath, 'README.md');
+  let rampUpScore = 0;
+
   if (fs.existsSync(readmePath)) {
     const readmeContent = fs.readFileSync(readmePath, 'utf8');
-    processReadme(readmeContent);
+    const { wordCount, nonGitHubLinksCount } = processReadme(readmeContent);
+
+    // Apply the formula for RampUpScore    
+    const nonGitHubLinksCountScore = (nonGitHubLinksCount / 3) * 0.1;
+    const readMeWordCountScore = ((wordCount / 80) * 0.1);
+    const SLOCRatioScore = (ratioOfSloc * 2);
+    rampUpScore = SLOCRatioScore + readMeWordCountScore + nonGitHubLinksCountScore;
+    rampUpScore = Math.min(rampUpScore, 1.0);
+    logger.info(`Calculated Ramp Up score for ${localPath}: ${rampUpScore}`);
   } else {
-    // console.log('No README file found.');
+    // No README file, RampUpScore is 0
+    logger.info('No README file found, Ramp Up score is 0');
+    rampUpScore = 0;
   }
 
-  return { sloc: totalSloc, comments: totalComments, ratio };
+  return rampUpScore;
 }
 
 
