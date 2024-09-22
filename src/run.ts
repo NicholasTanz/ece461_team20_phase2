@@ -75,6 +75,18 @@ async function processUrl(url: string): Promise<any> {
     );
     results.NetScore = netScore.toFixed(2);
   }
+
+  // Convert all number values to floats
+  for (let key in results) {
+    if (key !== 'URL') {
+      if (key.endsWith('_Latency')) {
+        results[key] = parseFloat(Number(results[key]).toFixed(3));
+      } else {
+        results[key] = parseFloat(Number(results[key]).toFixed(2));
+      }
+    }
+  }
+
   logger.info("Finished processing URL: " + url + " with NetScore: " + results.NetScore);
   // Return results
   return results;
@@ -130,29 +142,24 @@ async function processGithubUrl(url: string, results: any) {
     licenseResult
   ] = await Promise.all([
     getBusFactor(url).then(count => {
-      results.BusFactor = count >= 0 ? count.toFixed(2) : '-1';
-      results.BusFactor_Latency = ((performance.performance.now() - startTimes.busFactor) / 1000).toFixed(3);
-      return results.BusFactor;
+      results.BusFactor = count >= 0 ? parseFloat(count.toFixed(2)) : -1;
+      results.BusFactor_Latency = parseFloat(((performance.performance.now() - startTimes.busFactor) / 1000).toFixed(3));
     }),
     calculateRampUpMetric(localPath).then(score => {
-      results.RampUp = score.toFixed(2);
-      results.RampUp_Latency = ((performance.performance.now() - startTimes.rampUp) / 1000).toFixed(3);
-      return results.RampUp;
+      results.RampUp = parseFloat(score.toFixed(2));
+      results.RampUp_Latency = parseFloat(((performance.performance.now() - startTimes.rampUp) / 1000).toFixed(3));
     }),
     calculateCorrectnessMetric(localPath).then(test_ratio => {
-      results.Correctness = test_ratio.toFixed(2);
-      results.Correctness_Latency = ((performance.performance.now() - startTimes.correctness) / 1000).toFixed(3);
-      return results.Correctness;
+      results.Correctness = parseFloat(test_ratio.toFixed(2));
+      results.Correctness_Latency = parseFloat(((performance.performance.now() - startTimes.correctness) / 1000).toFixed(3));
     }),
     calculateResponsiveMaintainerMetric(url).then(score => {
-      results.ResponsiveMaintainer = score.toFixed(2);
-      results.ResponsiveMaintainer_Latency = ((performance.performance.now() - startTimes.responsiveMaintainer) / 1000).toFixed(3);
-      return results.ResponsiveMaintainer;
+      results.ResponsiveMaintainer = parseFloat(score.toFixed(2));
+      results.ResponsiveMaintainer_Latency = parseFloat(((performance.performance.now() - startTimes.responsiveMaintainer) / 1000).toFixed(3));
     }),
     checkLicenseCompatibility(url).then(licenseResult => {
-      results.License = licenseResult.score.toFixed(2);
-      results.License_Latency = ((performance.performance.now() - startTimes.license) / 1000).toFixed(3);
-      return results.License;
+      results.License = parseFloat(licenseResult.score.toFixed(2));
+      results.License_Latency = parseFloat(((performance.performance.now() - startTimes.license) / 1000).toFixed(3));
     })
   ]);
 }
