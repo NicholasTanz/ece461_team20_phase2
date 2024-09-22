@@ -31,12 +31,18 @@ import axios from 'axios';
 import { Octokit } from "@octokit/core";
 import logger from './logger';
 import { marked } from 'marked';
+import fetch from 'node-fetch';
 
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
 const PER_PAGE = 100; // GitHub API truncates certain number of contributors
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
-const octokit = new Octokit({ auth: GITHUB_TOKEN }); // Create an authenticated Octokit instance
+const octokit = new Octokit({ 
+  auth: GITHUB_TOKEN,
+  request: {
+    fetch: fetch as any
+  }
+}); // Create an authenticated Octokit instance
 
 export async function getBusFactor(url: string): Promise<number> {
   const repoPath = url.replace('https://github.com/', ''); // Extract the repository path from the provided GitHub URL
