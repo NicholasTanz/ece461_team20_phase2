@@ -13,7 +13,7 @@ how to interact with it onces it has been set up, the metrics we use to calculat
 
 
 
-Set-up instruction:
+# Set-up instruction:
 Instructions to run on local:
 1) "git clone https://github.com/abeuerle/ECE461.git"
 2) chmod +x ./run                                          //To give executing permision to the run file
