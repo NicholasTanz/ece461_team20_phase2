@@ -90,6 +90,25 @@ describe('getBusFactor', () => {
     expect(busFactor).to.equal(0.9);
   });
 
+  it('should return a bus factor score of 0.3 for 3 contributors', async () => {
+    sinon.stub(axios, 'get')
+      .onFirstCall().resolves({
+        data: Array(3).fill({ login: 'contributor', id: 1, contributions: 5 })
+      })
+    const busFactor = await getBusFactor('https://github.com/some/repo');
+    expect(busFactor).to.equal(0.3);
+  });
+
+  it('should return a bus factor score of 0.7 for 50 contributors', async () => {
+    sinon.stub(axios, 'get')
+      .onFirstCall().resolves({
+        data: Array(50).fill({ login: 'contributor', id: 1, contributions: 5 })
+      })
+
+    const busFactor = await getBusFactor('https://github.com/some/repo');
+    expect(busFactor).to.equal(0.7);
+  });
+
   it('should return -1 if the API call fails', async () => {
       sinon.stub(axios, 'get').rejects(new Error('API failed'));
 
