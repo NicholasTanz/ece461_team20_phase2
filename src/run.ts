@@ -18,7 +18,6 @@ dotenv.config();
 //console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
 import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
 import logger, { flushLogs } from './logger';
-import { runMochaTests } from './test'; 
 import * as performance from 'perf_hooks';
 import * as path from 'path';
 import * as fs from 'fs';

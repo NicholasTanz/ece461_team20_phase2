@@ -1,4 +1,18 @@
-import { exec, execSync } from 'child_process';
+/*
+File Name: 
+  test.ts
+
+Function: This code tests all of the metrics in metrics.ts and the ./run install command. All exported metrics functions and their smaller functions inside met
+
+This test bed uses mocha describe/it blocks to describe a test suite, and each it is a different test. At the end, mocha sums up all passed test "it" cases and 
+outputs a ## passed score for the output. To add more tests, use more describe/it blocks and test using the command "npx mocha dist/test.js" to get 
+uninterrupted and detail test messages, with full error breakdowns. 
+
+The version of mocha and and chai are down-graded from the latest version to be compatible with the rest of the code. The specific versions in the dependencies 
+are necessary for the versions of other core dependencies. This has to do with ESModule handling in latest versions. When updating, consider these. 
+*/
+
+import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { expect } from 'chai';
@@ -10,52 +24,81 @@ import * as os from 'os';
 
 
 
-export async function runMochaTests() {
-  return new Promise((resolve, reject) => {
-      const mochaCommand = `npx mocha ${path.join(__dirname, 'test.js')}`;
-      exec(mochaCommand, (error, stdout, stderr) => {
-          if (error) {
-              console.error('Error running tests:', error);
-              reject(error);
-          } else {
-              console.log('Mocha output:', stdout);
-              if (stderr) console.error('Mocha stderr:', stderr);
-              resolve(true);
-          }
-      });
+// export async function runMochaTests() {
+//   return new Promise((resolve, reject) => {
+//       const mochaCommand = `npx mocha ${path.join(__dirname, 'test.js')}`;
+//       exec(mochaCommand, (error, stdout, stderr) => {
+//           if (error) {
+//               console.error('Error running tests:', error);
+//               reject(error);
+//           } else {
+//               console.log('Mocha output:', stdout);
+//               if (stderr) console.error('Mocha stderr:', stderr);
+//               resolve(true);
+//           }
+//       });
+//   });
+// }
+
+describe('npm install command verification', () => {
+  it('should correctly install all dependencies', () => {
+    // console.log('Checking if "npm install" was run correctly');
+
+    const packageLockPath = path.join(process.cwd(), 'package-lock.json');
+
+    // Check if package-lock.json exists
+    expect(fs.existsSync(packageLockPath), 'package-lock.json should exist').to.be.true;
+
+    // Read and parse the package-lock.json file
+    const packageJson = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
+
+    // Get the list of dependencies and devDependencies
+    const dependencies = Object.keys(packageJson.dependencies || {});
+    const devDependencies = Object.keys(packageJson.devDependencies || {});
+    const allDependencies = [...dependencies, ...devDependencies];
+
+    // Run 'npm list' command to get the installed dependencies
+    const npmListOutput = execSync('npm list --depth=0 --json').toString();
+    const installedPackages = JSON.parse(npmListOutput).dependencies || {};
+
+    // Check if each dependency is listed in the installed packages
+    allDependencies.forEach(dependency => {
+      expect(installedPackages).to.have.property(dependency, 
+        `Dependency "${dependency}" should be installed`);
+    });
+
+    // console.log('All packages are accounted for. "npm install" ran correctly');
   });
-}
+});
 
-
-    
 // Test suite for getBusFactor
 describe('getBusFactor', () => {
-        afterEach(() => {
-            sinon.restore();
-        });
-  
-        it('should return a bus factor score of 0.9 for 150 contributors', async () => {
-          sinon.stub(axios, 'get')
-            .onFirstCall().resolves({
-              data: Array(100).fill({ login: 'contributor', id: 1, contributions: 5 })
-            })
-            .onSecondCall().resolves({
-              data: Array(50).fill({ login: 'contributor', id: 101, contributions: 3 })
-            });
-        
-          const busFactor = await getBusFactor('https://github.com/some/repo');
-          expect(busFactor).to.equal(0.9);
-        });
-  
-    it('should return -1 if the API call fails', async () => {
-        sinon.stub(axios, 'get').rejects(new Error('API failed'));
-  
-        const busFactor = await getBusFactor('https://github.com/some/repo');
-        expect(busFactor).to.equal(-1);
-    });
+  afterEach(() => {
+      sinon.restore();
+  });
+
+  it('should return a bus factor score of 0.9 for 150 contributors', async () => {
+    sinon.stub(axios, 'get')
+      .onFirstCall().resolves({
+        data: Array(100).fill({ login: 'contributor', id: 1, contributions: 5 })
+      })
+      .onSecondCall().resolves({
+        data: Array(50).fill({ login: 'contributor', id: 101, contributions: 3 })
+      });
+
+    const busFactor = await getBusFactor('https://github.com/some/repo');
+    expect(busFactor).to.equal(0.9);
+  });
+
+  it('should return -1 if the API call fails', async () => {
+      sinon.stub(axios, 'get').rejects(new Error('API failed'));
+
+      const busFactor = await getBusFactor('https://github.com/some/repo');
+      expect(busFactor).to.equal(-1);
+  });
 });
     
-
+//Test suite for calculateRampUpMetric
 describe('calculateRampUpMetric', () => {
   let tempDir: string;
 
@@ -120,56 +163,56 @@ describe('calculateRampUpMetric', () => {
   });
 
   it('should handle a README with non-GitHub/NPM links', async () => {
-      // Create a README with non-GitHub/NPM links
-      const readmePath = path.join(tempDir, 'README.md');
-      const readmeContent = `# Project Title\n\nThis is a readme file with a [link](https://example.com)\nAnother [link](https://anotherexample.com)`;
-      await fs.promises.writeFile(readmePath, readmeContent);
-
-      const file1Path = path.join(tempDir, 'file1.js');
-      await fs.promises.writeFile(file1Path, `// Comment\nconst x = 10;\nfunction test() { return x; }\n/* Block comment */`);
-
-      // Call the function
-      const result = await calculateRampUpMetric(tempDir);
-
-      // Make assertions
-      expect(result).to.be.greaterThan(0); // Score should increase due to non-GitHub/NPM links
+    // Create a README with non-GitHub/NPM links
+    const readmePath = path.join(tempDir, 'README.md');
+    const readmeContent = `# Project Title\n\nThis is a readme file with a [link](https://example.com)\nAnother [link](https://anotherexample.com)`;
+    await fs.promises.writeFile(readmePath, readmeContent);
+    
+    const file1Path = path.join(tempDir, 'file1.js');
+    await fs.promises.writeFile(file1Path, `// Comment\nconst x = 10;\nfunction test() { return x; }\n/* Block comment */`);
+    
+    // Call the function
+    const result = await calculateRampUpMetric(tempDir);
+    
+    // Make assertions
+    expect(result).to.be.greaterThan(0); // Score should increase due to non-GitHub/NPM links
   });
 });
 
-   // Test suite for cloneRepo
-   describe('cloneRepo (real clone)', function () {
-    this.timeout(10000); // Set a higher timeout if needed (cloning can take time)
-  
-    const tempDir = path.join(__dirname, 'tempRepoClone');
-  
-    beforeEach(async () => {
-      // Ensure temp directory is clean before each test
-      try {
-        fs.promises.rmdir(tempDir, { recursive: true});
-      } catch (error) {
-        // Ignore if directory doesn't exist
-      }
-    });
-  
-    afterEach(async () => {
-      // Clean up temp directory after each test
-      fs.promises.rm(tempDir, { recursive: true});
-    });
-  
-    it('should successfully clone a real repository', async () => {
-      const repoUrl = 'https://github.com/LucidVR/lucidgloves'; // Replace with a valid repo URL
-  
-      // Call the real cloneRepo function (this will clone a real repo)
-      await cloneRepo(repoUrl, tempDir);
-  
-      // Verify that the repo was cloned by checking if the tempDir exists and has contents
-      const dirExists = await fs.promises.stat(tempDir).then(() => true).catch(() => false);
-      expect(dirExists).to.be.true; // Make sure the directory exists after cloning
-  
-      const files = fs.promises.readdir(tempDir);
-      expect((await files).length).to.be.greaterThan(0); // Make sure the directory isn't empty
-    });
+ // Test suite for cloneRepo
+ describe('cloneRepo (real clone)', function () {
+  this.timeout(10000); // Set a higher timeout if needed (cloning can take time)
+
+  const tempDir = path.join(__dirname, 'tempRepoClone');
+
+  beforeEach(async () => {
+    // Ensure temp directory is clean before each test
+    try {
+      fs.promises.rmdir(tempDir, { recursive: true});
+    } catch (error) {
+      // Ignore if directory doesn't exist
+    }
   });
+
+  afterEach(async () => {
+    // Clean up temp directory after each test
+    fs.promises.rm(tempDir, { recursive: true});
+  });
+
+  it('should successfully clone a real repository', async () => {
+    const repoUrl = 'https://github.com/LucidVR/lucidgloves'; // Replace with a valid repo URL
+
+    // Call the real cloneRepo function (this will clone a real repo)
+    await cloneRepo(repoUrl, tempDir);
+
+    // Verify that the repo was cloned by checking if the tempDir exists and has contents
+    const dirExists = await fs.promises.stat(tempDir).then(() => true).catch(() => false);
+    expect(dirExists).to.be.true; // Make sure the directory exists after cloning
+
+    const files = fs.promises.readdir(tempDir);
+    expect((await files).length).to.be.greaterThan(0); // Make sure the directory isn't empty
+  });
+});
   
 
 
