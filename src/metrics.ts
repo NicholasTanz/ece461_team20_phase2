@@ -242,7 +242,7 @@ export async function calculateRampUpMetric(localPath: string): Promise<number> 
 export async function checkLicenseCompatibility(url: string): Promise<{ score: number, details: string }> {
 
   if (!GITHUB_TOKEN) {
-    //GitHub token is not set. Set the GITHUB_TOKEN environment variable!!!!!!!!!!!!!!
+    logger.debug('GitHub token not set');
     return { score: 0, details: 'GitHub token not set' };
   }
 
@@ -262,15 +262,14 @@ export async function checkLicenseCompatibility(url: string): Promise<{ score: n
       const licenseResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/LICENSE`, { headers });
       licenseInfo = Buffer.from(licenseResponse.data.content, 'base64').toString('utf-8');
     } catch (error) {
-        //console.log(`LICENSE file not found for repository ${repoPath}, checking package.json...`);
-      
+        logger.info(`LICENSE file not found for repository ${repoPath}, checking package.json...`);
       // Check package.json
       try {
         const packageJsonResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/package.json`, { headers });
         const packageJsonContent = JSON.parse(Buffer.from(packageJsonResponse.data.content, 'base64').toString('utf-8'));
         licenseInfo = packageJsonContent.license || '';
       } catch (error) {
-        console.log('package.json not found or does not contain license information');
+        logger.info('package.json not found or does not contain license information');
       }
     }
 
@@ -283,15 +282,17 @@ export async function checkLicenseCompatibility(url: string): Promise<{ score: n
 
     if (licenseInfo) {
       const compatible = isCompatibleWithLGPLv2_1(licenseInfo);
+      logger.info(`License found for ${url}: ${licenseInfo.split('\n')[0]}. Compatible: ${compatible}`);
       return {
         score: compatible ? 1 : 0,
         details: `License found: ${licenseInfo.split('\n')[0]}. Compatible: ${compatible}`
       };
     }
 
+    logger.info(`No license information found for ${url}`);
     return { score: 0, details: 'No license information found' };
   } catch (error: any) {
-    console.error(`Error checking license: ${error.message}`);
+    logger.debug(`Error checking license for ${url}: ${error.message}`);
     return { score: 0, details: `Error checking license: ${error.message}` };
   }
 }
@@ -456,6 +457,8 @@ export async function calculateResponsiveMaintainerMetric(url: string): Promise<
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const dateFilter = oneMonthAgo.toISOString();
 
+    logger.info(`Calculating Responsive Maintainer metric for ${url}`);
+
     // Get closed issues in last month
     const closedIssuesResponse = await octokit.request('GET /repos/{owner}/{repo}/issues', {
       owner,
@@ -490,9 +493,10 @@ export async function calculateResponsiveMaintainerMetric(url: string): Promise<
     // Calculation for responsive maintainer
     const responsiveScore = totalOpen === 0 && totalClosed === 0 ? 0 : totalClosed / (totalClosed + totalOpen);
 
+    logger.info(`Responsive Maintainer score for ${url}: ${Math.min(responsiveScore, 1)}`);
     return Math.min(responsiveScore, 1); // Make sure the score is between 0 and 1
   } catch (error: any) {
-    console.error(`Error calculating Responsive Maintainer metric: ${error.message}`);
+    logger.debug(`Error calculating Responsive Maintainer metric for ${url}: ${error.message}`);
     return 0;
   }
 }
