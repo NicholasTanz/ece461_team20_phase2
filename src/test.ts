@@ -28,7 +28,7 @@ export async function runMochaTests() {
 
 
     
-        // Test suite for getBusFactor
+// Test suite for getBusFactor
 describe('getBusFactor', () => {
         afterEach(() => {
             sinon.restore();
@@ -171,110 +171,137 @@ describe('calculateRampUpMetric', () => {
     });
   });
   
-  // // Test suite for checkLicenseCompatibility
-  // describe('checkLicenseCompatibility', () => {
-  //   afterEach(() => {
-  //     sinon.restore();
-  //   });
-  
-  //   it('should return a compatible license score and details', async () => {
-  //     const mockLicenseResponse = {
-  //       data: { content: Buffer.from('MIT License').toString('base64') },
-  //     };
-  //     sinon.stub(axios, 'get').resolves(mockLicenseResponse);
-  
-  //     const result = await checkLicenseCompatibility('https://github.com/some/repo');
-  //     expect(result.score).to.equal(1);
-  //     expect(result.details).to.include('MIT License');
-  //   });
-  
-  //   it('should return 0 if no license is found', async () => {
-  //     sinon.stub(axios, 'get').rejects(new Error('LICENSE file not found'));
-  
-  //     const result = await checkLicenseCompatibility('https://github.com/some/repo');
-  //     expect(result.score).to.equal(0);
-  //     expect(result.details).to.include('No license information found');
-  //   });
-  // });
-  
-  // // Test suite for calculateCorrectnessMetric
-  // describe('calculateCorrectnessMetric', () => {
-  //   let mockStat: sinon.SinonStubbedInstance<fs.Stats>;
 
-  //   beforeEach(() => {
-  //     // Create a stubbed instance of the Stats class and configure it
-  //     mockStat = sinon.createStubInstance(fs.Stats);
-  
-  //     // Ensure isFile and isDirectory return correct boolean values
-  //     mockStat.isFile.returns(true);        // Mock it as a file
-  //     mockStat.isDirectory.returns(false);  // Mock it as not a directory
-  
-  //     // Stub fs.promises.stat to return the mockStat instance
-  //     sinon.stub(fs.promises, 'stat').resolves(mockStat as unknown as fs.Stats);
-  //   });
-  
-  //   afterEach(() => {
-  //     // Restore the original fs.promises.stat after each test to avoid conflicts
-  //     sinon.restore();
-  //   });
-  
-  //   it('should calculate the test suite coverage correctly', async () => {
-  //     // Mock fs.promises.readFile to simulate package.json and test files
-  //     const mockReadFile = sinon.stub(fs.promises, 'readFile').resolves(JSON.stringify({
-  //       devDependencies: {
-  //         jest: "^26.0.0"
-  //       }
-  //     }));
-  //     //const mockReaddir = sinon.stub(fs.promises, 'readdir').resolves(['test.js']);
-  //     const mockReaddir = sinon.stub(fs.promises, 'readdir').resolves([
-  //       { name: 'test.js', isFile: () => true, isDirectory: () => false } as unknown as fs.Dirent
-  //     ]);
-  //     //const mockStat = sinon.stub(fs.promises, 'stat').resolves({ isFile: () => true, isDirectory: () => false });
-  //     const mockStat = sinon.stub(fs.promises, 'stat').resolves({
-  //       isFile: () => true,
-  //       isDirectory: () => false,
-  //       atime: new Date(),
-  //       mtime: new Date(),
-  //       ctime: new Date(),
-  //       birthtime: new Date(),
-  //       // add any other properties as needed
-  //     } as unknown as fs.Stats);
-      
-  
-  //     const result = await calculateCorrectnessMetric('./local/path');
-  //     expect(result).to.be.greaterThan(0.5); // Because we have a test suite (jest)
-      
-  //     mockReadFile.restore();
-  //     mockReaddir.restore();
-  //     mockStat.restore();
-  //   });
-  // });
-  
-  // // Test suite for calculateResponsiveMaintainerMetric
-  // describe('calculateResponsiveMaintainerMetric', () => {
-  //   afterEach(() => {
-  //     sinon.restore();
-  //   });
-  
-  //   it('should calculate the correct responsive maintainer score', async () => {
-  //     const mockIssuesResponse = {
-  //       data: [{}, {}, {}] // 3 closed issues
-  //     };
-  //     const mockPullsResponse = {
-  //       data: [{ closed_at: '2021-10-01T00:00:00Z' }] // 1 closed PR in the last month
-  //     };
-  //     const mockOpenIssuesResponse = {
-  //       data: [{}] // 1 open issue
-  //     };
-  
-  //     sinon.stub(axios, 'get')
-  //       .onFirstCall().resolves(mockIssuesResponse) // Closed issues
-  //       .onSecondCall().resolves(mockPullsResponse) // Closed PRs
-  //       .onThirdCall().resolves(mockOpenIssuesResponse); // Open issues
-  
-  //     const score = await calculateResponsiveMaintainerMetric('https://github.com/some/repo');
-  //     expect(score).to.be.closeTo(0.75, 0.01); // Responsive score based on mock data
-  //   });
-  // });
-  
+
+//license checker test suite
+describe('checkLicenseCompatibility', () => {
+  let originalToken: string | undefined;
+
+  beforeEach(() => {
+    originalToken = process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN = 'fake_token_for_testing';
+  });
+
+  afterEach(() => {
+    process.env.GITHUB_TOKEN = originalToken;
+    sinon.restore();
+  });
+
+  it('should return a compatible license from the LICENSE file', async () => {
+    const mockLicenseResponse = {
+      data: { content: Buffer.from('MIT License').toString('base64') }
+    };
+    sinon.stub(axios, 'get').resolves(mockLicenseResponse);
+
+    const result = await checkLicenseCompatibility('https://github.com/some/repo');
+    expect(result.score).to.equal(1);
+    expect(result.details).to.include('MIT License');
+  });
+
+  it('should return a compatible license from package.json', async () => {
+    const mockLicenseResponse = { response: { status: 404 } };
+    const mockPackageJsonResponse = {
+      data: { content: Buffer.from(JSON.stringify({ license: 'Apache-2.0' })).toString('base64') }
+    };
+    const axiosStub = sinon.stub(axios, 'get');
+    axiosStub.onFirstCall().rejects(mockLicenseResponse);
+    axiosStub.onSecondCall().resolves(mockPackageJsonResponse);
+
+    const result = await checkLicenseCompatibility('https://github.com/some/repo');
+    expect(result.score).to.equal(1);
+    expect(result.details).to.include('Apache-2.0');
+  });
+
+  it('should return 0 if no license information is found', async () => {
+    const mockResponse = { response: { status: 404 } };
+    const axiosStub = sinon.stub(axios, 'get');
+    axiosStub.onFirstCall().rejects(mockResponse); // LICENSE file not found
+    axiosStub.onSecondCall().rejects(mockResponse); // package.json not found
+    axiosStub.onThirdCall().rejects(mockResponse); // README not found
+
+    const result = await checkLicenseCompatibility('https://github.com/some/repo');
+    expect(result.score).to.equal(0);
+    expect(result.details).to.equal('No license information found');
+  });
+
+  it('should handle GitHub token missing error', async () => {
+    delete process.env.GITHUB_TOKEN;
+
+    const result = await checkLicenseCompatibility('https://github.com/some/repo');
+    expect(result.score).to.equal(0);
+    expect(result.details).to.include('GitHub token not set');
+  });
+
+  it('should handle API failure gracefully', async () => {
+    sinon.stub(axios, 'get').rejects(new Error('API failed'));
+
+    const result = await checkLicenseCompatibility('https://github.com/some/repo');
+    expect(result.score).to.equal(0);
+    expect(result.details).to.include('Error checking license: API failed');
+  });
+});
+
+//test suite for calculateCorrectnessMetric
+describe('calculateCorrectnessMetric', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should return 0 for a project with no test files or frameworks', async () => {
+    sinon.stub(fs.promises, 'readFile').resolves('{}');
+    sinon.stub(fs.promises, 'readdir').resolves([]);
+
+    const result = await calculateCorrectnessMetric('./mock/path');
+    expect(result).to.equal(0);
+  });
+
+  it('should return a score greater than 0 for a project with test files', async () => {
+    sinon.stub(fs.promises, 'readFile').resolves(JSON.stringify({
+      devDependencies: { jest: "^26.0.0" }
+    }));
+    sinon.stub(fs.promises, 'readdir').resolves([
+      { name: 'test.js',
+        isFile: () => true,
+        isDirectory: () => false } as unknown as fs.Dirent]);
+    sinon.stub(fs.promises, 'stat').resolves({
+      isFile: () => true,
+      isDirectory: () => false
+    } as unknown as fs.Stats);
+
+    const result = await calculateCorrectnessMetric('./mock/path');
+    expect(result).to.be.greaterThan(0);
+  });
+});
+
+//test suite for calculateResponsiveMaintainerMetric
+describe('calculateResponsiveMaintainerMetric', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should return 0 for a repository with no activity', async () => {
+    sinon.stub(axios, 'get').resolves({ data: [] });
+
+    const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
+    expect(result).to.equal(0);
+  });
+
+  it('should return a score between 0 and 1 for a repository with mixed activity', async () => {
+    const axiosStub = sinon.stub(axios, 'get');
+    axiosStub.onFirstCall().resolves({ data: [{}, {}] }); // 2 closed issues
+    axiosStub.onSecondCall().resolves({ data: [{ closed_at: new Date().toISOString() }] }); // 1 recent closed PR
+    axiosStub.onThirdCall().resolves({ data: [{}] }); // 1 open issue
+
+    const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
+    expect(result).to.be.within(0, 1);
+  });
+
+  it('should handle API errors gracefully', async () => {
+    sinon.stub(axios, 'get').rejects(new Error('API error'));
+
+    const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
+    expect(result).to.equal(0);
+  });
+});
+
 
