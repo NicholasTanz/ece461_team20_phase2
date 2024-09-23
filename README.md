@@ -48,6 +48,7 @@ should be stored within the ECE461/ directory and are unique between users. Here
   and make calls on these repostiories in order to print out a netscore. These calculations are dont in metrics.ts
   - The test function should run a series of tests on the code by inputing sample URLs to check the total coverage that this 
   project has.
+  - The command "npx mocha dist/test.js" runs a more detailed test breakdown, including all failed tests and what exactly failed.
 
 
 
