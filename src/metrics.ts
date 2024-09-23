@@ -16,7 +16,11 @@ Function:
   to a non GitHub/npm link, and if no readme was present assign the ramp up score a 0. We then assigned a multiplier to each factor
   by looking at a number of URLs and using our best engineering judgement to assign weights. 
 
-  Correctness:
+  = Correctness: This Metric measures how correct a certain codebase is in terms of how tested it is. This looks primarily at the ratio
+  of source lines of code to test lines of code. A study linked within our phase 1 doc (Github), shows that slotc / sloc correlates well
+  enough with actual test coverage showing slotc / sloc shows how accurate a test suite may be. First Test suites are tested for and if
+  found, part of the score is rewarded. The ratio of slotc/sloc is then also factored in later. This is done by walking the cloned repo for
+  test lines of code as well as just file directories. Assumptions are made for total sloc and the ratio is added to the total correctness score.
 
   Responsive Maintainer:
 
