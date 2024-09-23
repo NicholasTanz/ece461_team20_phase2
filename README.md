@@ -34,7 +34,9 @@ should be stored within the ECE461/ directory and are unique between users. Here
 
 -.env: Make sure this file has 3 arguments set like this:
   GITHUB_TOKEN="your_token"
+
   LOG_FILE=Path/to/Your/Log/File  # Path to the log file
+  
   LOG_LEVEL=2     # Set verbosity level (0: silent, 1: info, 2: debug)
 
 
