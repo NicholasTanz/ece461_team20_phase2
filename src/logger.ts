@@ -1,3 +1,15 @@
+/*
+File Name: 
+  logger.ts
+
+Function: 
+  -The function of this file is to create logger that logs certain info and debug messages into a separate file
+  -winston was used for ease of use when it comes to log verbosity. This uses LOG_LEVEL and LOG_FILE which need to be set up 
+  in your .env.
+  -LOG_LEVEL 0 is for silent (default), 1 is for info, 2 is for debug.
+  -This functions also has flushlogs which needs to be used at the end of any async program paths. This will make sure all logs
+  are printed before the program shuts down.
+*/
 import * as winston from 'winston';
 
 // Get environment variables
