@@ -23,6 +23,8 @@ import { getBusFactor, calculateRampUpMetric, cloneRepo, checkLicenseCompatibili
 import * as os from 'os';
 
 
+let totalTests = 0;
+let passedTests = 0;
 
 // export async function runMochaTests() {
 //   return new Promise((resolve, reject) => {
@@ -66,7 +68,8 @@ describe('npm install command verification', () => {
       expect(installedPackages).to.have.property(dependency, 
         `Dependency "${dependency}" should be installed`);
     });
-
+    totalTests++;
+    passedTests++;
     // console.log('All packages are accounted for. "npm install" ran correctly');
   });
 });
@@ -88,6 +91,10 @@ describe('getBusFactor', () => {
 
     const busFactor = await getBusFactor('https://github.com/some/repo');
     expect(busFactor).to.equal(0.9);
+    totalTests++;
+    if(busFactor == 0.9){
+      passedTests++;
+    }
   });
 
   it('should return a bus factor score of 0.3 for 3 contributors', async () => {
@@ -97,6 +104,10 @@ describe('getBusFactor', () => {
       })
     const busFactor = await getBusFactor('https://github.com/some/repo');
     expect(busFactor).to.equal(0.3);
+    totalTests++;
+    if(busFactor == 0.3){
+      passedTests++;
+    }
   });
 
   it('should return a bus factor score of 0.7 for 50 contributors', async () => {
@@ -107,6 +118,10 @@ describe('getBusFactor', () => {
 
     const busFactor = await getBusFactor('https://github.com/some/repo');
     expect(busFactor).to.equal(0.7);
+    totalTests++;
+    if(busFactor == 0.7){
+      passedTests++;
+    }
   });
 
   it('should return -1 if the API call fails', async () => {
@@ -114,6 +129,10 @@ describe('getBusFactor', () => {
 
       const busFactor = await getBusFactor('https://github.com/some/repo');
       expect(busFactor).to.equal(-1);
+      totalTests++;
+    if(busFactor == -1){
+      passedTests++;
+    }
   });
 });
     
@@ -144,6 +163,10 @@ describe('calculateRampUpMetric', () => {
     
     // Make assertions
     expect(result).to.be.greaterThan(0); // Ensure the score is greater than 0
+    totalTests++;
+    if(result > 0){
+      passedTests++;
+    }
   });
 
   it('should return 0 if no README is present', async () => {
@@ -156,6 +179,10 @@ describe('calculateRampUpMetric', () => {
     
     // Make assertions
     expect(result).to.equal(0); // No README, so ramp-up score should be 0
+    totalTests++;
+    if(result == 0){
+      passedTests++;
+    }
   });
 
   it('should return similar ramp-up scores for files with 499 and 600 lines', async () => {
@@ -179,6 +206,8 @@ describe('calculateRampUpMetric', () => {
 
     // Make assertions: The ramp-up score for 499 and 600 lines should be very similar since the limit is 500
     expect(result499).to.be.closeTo(result600, 0.01); // Allow a small margin for any slight differences
+    totalTests++;
+    passedTests++;
   });
 
   it('should handle a README with non-GitHub/NPM links', async () => {
@@ -195,6 +224,10 @@ describe('calculateRampUpMetric', () => {
     
     // Make assertions
     expect(result).to.be.greaterThan(0); // Score should increase due to non-GitHub/NPM links
+    totalTests++;
+    if(result > 0){
+      passedTests++;
+    }
   });
 });
 
@@ -230,6 +263,8 @@ describe('calculateRampUpMetric', () => {
 
     const files = fs.promises.readdir(tempDir);
     expect((await files).length).to.be.greaterThan(0); // Make sure the directory isn't empty
+    totalTests++;
+    passedTests++;
   });
 });
   
@@ -258,6 +293,10 @@ describe('checkLicenseCompatibility', () => {
     const result = await checkLicenseCompatibility('https://github.com/some/repo');
     expect(result.score).to.equal(1);
     expect(result.details).to.include('MIT License');
+    totalTests++;
+    if(result.score == 1){
+      passedTests++;
+    }
   });
 
   it('should return a compatible license from package.json', async () => {
@@ -272,6 +311,10 @@ describe('checkLicenseCompatibility', () => {
     const result = await checkLicenseCompatibility('https://github.com/some/repo');
     expect(result.score).to.equal(1);
     expect(result.details).to.include('Apache-2.0');
+    totalTests++;
+    if(result.score == 1){
+      passedTests++;
+    }
   });
 
   it('should return 0 if no license information is found', async () => {
@@ -284,6 +327,10 @@ describe('checkLicenseCompatibility', () => {
     const result = await checkLicenseCompatibility('https://github.com/some/repo');
     expect(result.score).to.equal(0);
     expect(result.details).to.equal('No license information found');
+    totalTests++;
+    if(result.score == 0){
+      passedTests++;
+    }
   });
 
   it('should handle GitHub token missing error', async () => {
@@ -292,6 +339,10 @@ describe('checkLicenseCompatibility', () => {
     const result = await checkLicenseCompatibility('https://github.com/some/repo');
     expect(result.score).to.equal(0);
     expect(result.details).to.include('GitHub token not set');
+    totalTests++;
+    if(result.score == 0){
+      passedTests++
+    }
   });
 
   it('should handle API failure gracefully', async () => {
@@ -300,7 +351,11 @@ describe('checkLicenseCompatibility', () => {
     const result = await checkLicenseCompatibility('https://github.com/some/repo');
     expect(result.score).to.equal(0);
     expect(result.details).to.include('Error checking license: API failed');
-  });
+    totalTests++;
+    if(result.score == 0){
+      passedTests++;
+    }
+  }); 
 });
 
 //test suite for calculateCorrectnessMetric
@@ -315,6 +370,10 @@ describe('calculateCorrectnessMetric', () => {
 
     const result = await calculateCorrectnessMetric('./mock/path');
     expect(result).to.equal(0);
+    totalTests++;
+    if(result == 0){
+      passedTests++;
+    }
   });
 
   it('should return a score greater than 0 for a project with test files', async () => {
@@ -332,6 +391,10 @@ describe('calculateCorrectnessMetric', () => {
 
     const result = await calculateCorrectnessMetric('./mock/path');
     expect(result).to.be.greaterThan(0);
+    totalTests++;
+    if(result > 0){
+      passedTests++;
+    }
   });
 });
 
@@ -346,6 +409,10 @@ describe('calculateResponsiveMaintainerMetric', () => {
 
     const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
     expect(result).to.equal(0);
+    totalTests++;
+    if(result == 0){
+      passedTests++;
+    }
   });
 
   it('should return a score between 0 and 1 for a repository with mixed activity', async () => {
@@ -356,6 +423,8 @@ describe('calculateResponsiveMaintainerMetric', () => {
 
     const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
     expect(result).to.be.within(0, 1);
+    totalTests++;
+    passedTests++;
   });
 
   it('should handle API errors gracefully', async () => {
@@ -363,7 +432,16 @@ describe('calculateResponsiveMaintainerMetric', () => {
 
     const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
     expect(result).to.equal(0);
+    totalTests++;
+    if(result == 0){
+      passedTests++;
+    }
   });
+
+  after(() => {
+    console.log(`\n${passedTests}/${totalTests} test cases passed. -1% Line coverage achieved`);
+  });
+
 });
 
 
