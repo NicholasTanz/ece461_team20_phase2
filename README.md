@@ -48,6 +48,7 @@ should be stored within the ECE461/ directory and are unique between users. Here
   and make calls on these repostiories in order to print out a netscore. These calculations are dont in metrics.ts
   - The test function should run a series of tests on the code by inputing sample URLs to check the total coverage that this 
   project has.
+  - The command "npx mocha dist/test.js" runs a more detailed test breakdown, including all failed tests and what exactly failed.
 
 
 
@@ -71,6 +72,10 @@ should be stored within the ECE461/ directory and are unique between users. Here
   found, part of the score is rewarded. The ratio of slotc/sloc is then also factored in later. This is done by walking the cloned repo for
   test lines of code as well as just file directories. Assumptions are made for total sloc and the ratio is added to the total correctness score.
 
-  Responsive Maintainer:
+  Responsive Maintainer: This Metric measures how responsive and maintained the package is. This is based on the number of open issues and open 
+  pull requests and compared to the number of closed issues and pull requests. We look at the frequency and the ratio between them to determine if it's
+  a well-maintained package or not. This will help give us an idea on how often a package is updated. 
 
-  License: 
+  License: This Metric measures if a license is compatible with the company license which uses a GNU LGPLv2.1 licsense. We'll check
+  through a packages README or package.json and check to see if their license is compatible. Once we have this information we'll output with a 
+  0 or 1 based on if the license is compatible or not.

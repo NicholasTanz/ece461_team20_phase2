@@ -242,17 +242,17 @@ export async function calculateRampUpMetric(localPath: string): Promise<number> 
   return rampUpScore;
 }
 
-
 export async function checkLicenseCompatibility(url: string): Promise<{ score: number, details: string }> {
+  const token = process.env.GITHUB_TOKEN;
 
-  if (!GITHUB_TOKEN) {
+  if (!token) {
     logger.debug('GitHub token not set');
     return { score: 0, details: 'GitHub token not set' };
   }
 
   const headers = {
     'Accept': 'application/vnd.github.v3+json',
-    'Authorization': `token ${GITHUB_TOKEN}`,
+    'Authorization': `token ${token}`,
     'User-Agent': 'Your-App-Name'
   };
 
@@ -265,23 +265,39 @@ export async function checkLicenseCompatibility(url: string): Promise<{ score: n
     try {
       const licenseResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/LICENSE`, { headers });
       licenseInfo = Buffer.from(licenseResponse.data.content, 'base64').toString('utf-8');
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response && error.response.status === 404) {
         logger.info(`LICENSE file not found for repository ${repoPath}, checking package.json...`);
-      // Check package.json
-      try {
-        const packageJsonResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/package.json`, { headers });
-        const packageJsonContent = JSON.parse(Buffer.from(packageJsonResponse.data.content, 'base64').toString('utf-8'));
-        licenseInfo = packageJsonContent.license || '';
-      } catch (error) {
-        logger.info('package.json not found or does not contain license information');
+        // Check package.json
+        try {
+          const packageJsonResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/contents/package.json`, { headers });
+          const packageJsonContent = JSON.parse(Buffer.from(packageJsonResponse.data.content, 'base64').toString('utf-8'));
+          licenseInfo = packageJsonContent.license || '';
+        } catch (packageError: any) {
+          if (packageError.response && packageError.response.status === 404) {
+            logger.info('package.json not found or does not contain license information');
+          } else {
+            throw packageError;
+          }
+        }
+      } else {
+        throw error;
       }
     }
 
     // If still no license info, check README
     if (!licenseInfo) {
-      const readmeResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/readme`, { headers });
-      const readmeContent = Buffer.from(readmeResponse.data.content, 'base64').toString('utf-8');
-      licenseInfo = extractLicenseFromReadme(readmeContent) || '';
+      try {
+        const readmeResponse = await axios.get(`${GITHUB_API_URL}/${repoPath}/readme`, { headers });
+        const readmeContent = Buffer.from(readmeResponse.data.content, 'base64').toString('utf-8');
+        licenseInfo = extractLicenseFromReadme(readmeContent) || '';
+      } catch (readmeError: any) {
+        if (readmeError.response && readmeError.response.status === 404) {
+          logger.info('README not found');
+        } else {
+          throw readmeError;
+        }
+      }
     }
 
     if (licenseInfo) {
