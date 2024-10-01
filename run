@@ -1,2 +1,10 @@
 #!/bin/sh
+
+# Run npm build, and exit if it fails
+npm run build
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+# Run the node command
 node dist/run.js "$@"
