@@ -18,8 +18,7 @@ Instructions to run on local:
 1) "git clone https://github.com/abeuerle/ECE461.git"
 2) cd into the ECE461/ directory.
 3) Create a .env file with a GitHub Token, Log level, and Log verbosity.
-2) "chmod +x ./run" to give permissions
-3) "npm run build"                                 
+2) "chmod +x ./run" to give permissions                               
 5) "./run install" makes sure all the dependancies are installed
 6) "./run Path/to/URL/File" this will run for all URL's within the txt at the path specified
 7) "./run test" runs the test suite and returns coverage
