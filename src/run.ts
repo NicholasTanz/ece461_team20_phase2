@@ -245,35 +245,40 @@ async function main() {
   
   // ./run test
   } else if (command === 'test') {
-    exec('npx mocha dist/test.js', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Test failed: ${stderr}`);
-            process.exit(1); // Exit with 1 if tests fail
-        } else {
-          
-            // Capture test results from stdout using a regex
-            const testResultRegex = /(\d+)\/(\d+) test cases passed\.\s*(-?\d+)% line coverage achieved/i;
-            const match = stdout.match(testResultRegex);
-
-            if (match) {
-                const passed = parseInt(match[1], 10);
-                const total = parseInt(match[2], 10);
-                let coverage = parseInt(match[3], 10);
-
-                if(coverage < 0) { // hard coded remove later. 
-                  coverage = 80; 
-                }
-
-                // Print in the format you want
-                console.log(`${passed}/${total} test cases passed. ${coverage}% line coverage achieved.`);
-            } else {
-                // If no match, just print stdout as fallback
-                console.log(stdout);
-            }
-
-            process.exit(0); // Exit with 0 on successful test completion
-        }
-    });
+    exec('npx nyc mocha -r ts-node/register src/**/*.ts', (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Test failed: ${stderr}`);
+          process.exit(1);  // Exit with error
+      } else {
+          // Regex to capture the total test cases and passed test cases
+          const testCasesRegex = /(\d+)\/(\d+) test cases passed\./;
+          const testCasesMatch = stdout.match(testCasesRegex);
+  
+          // Regex to capture the line coverage percentage for all files
+          const coverageRegex = /All files\s+\|\s+(\d+\.\d+)\s+\|\s+(\d+\.\d+)\s+\|\s+(\d+\.\d+)\s+\|\s+(\d+\.\d+)\s+/;
+          const coverageMatch = stdout.match(coverageRegex);
+  
+          let passed = 0;
+          let total = 0;
+          let coverage = -1; // Default value for coverage if not found
+  
+          if (testCasesMatch) {
+              passed = parseInt(testCasesMatch[1], 10);
+              total = parseInt(testCasesMatch[2], 10);
+          } else {
+              console.log('Test case information not found in output.');
+          }
+  
+          if (coverageMatch) {
+              coverage = parseInt(coverageMatch[1], 10); // Capture the percentage
+          } else {
+              console.log('Coverage percentage not found in output.');
+          }
+  
+          console.log(`${passed}/${total} test cases passed. ${coverage}% line coverage achieved.`);
+          process.exit(0);  // Exit successfully
+      }
+  });
   await flushLogs(); // Make sure logger finished writing. 
   } 
 }

@@ -20,15 +20,17 @@
   },
   "devDependencies": {
     "@types/chai": "^4.3.19",
-    "@types/mocha": "^10.0.8",
+    "@types/mocha": "^10.0.9",
     "@types/node": "^18.0.0",
-    "@types/sinon": "^17.0.3",
     "@types/node-fetch": "^2.6.4",
+    "@types/sinon": "^17.0.3",
     "chai": "^4.4.1",
     "minimatch": "^3.0.5",
     "mocha": "^10.7.3",
     "nanoid": "^3.1.31",
+    "nyc": "^17.1.0",
     "sinon": "^19.0.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   }
 }

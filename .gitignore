@@ -1,3 +1,5 @@
 node_modules
 dist
 repos
+.nyc_output
+coverage
