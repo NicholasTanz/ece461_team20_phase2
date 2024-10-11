@@ -1,8 +1,4 @@
-Team Members: Alex Beuerle, Sayim Shazlee, Nicholas Viardo, Dhruv Chaudhary
-
-
-
-
+Team Members: Nicholas Tanzillo, Akash Amalarasan, Charlie Kim, Alison Liang.
 
 # Purpose:
 The main purpose of this project is to take in a number of URLs from a file of GitHub and npm repositories and assign 
@@ -10,47 +6,50 @@ a score to them based on 5 metrics we have elected to use. Below is documentatio
 how to interact with it onces it has been set up, the metrics we use to calculate netScore and their justification. 
 
 
+## Setup Instructions
+> **Note**: Develop on eceprog, this is the environment that our project will be tested on. 
 
+1. **Set environment variables:**
+  ```bash
+  export GITHUB_TOKEN=your_github_token_here
+  export LOG_FILE=your_log_file_path_here
+  export LOG_LEVEL=your_log_level_here
+  ```
 
+2. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/NicholasTanz/ece461_team20_phase2
+   ```
 
-## Set-up instruction:
-Instructions to run on local:
-1) "git clone https://github.com/abeuerle/ECE461.git"
-2) cd into the ECE461/ directory.
-3) Create a .env file with a GitHub Token, Log level, and Log verbosity.
-2) "chmod +x ./run" to give permissions                               
-5) "./run install" makes sure all the dependancies are installed
-6) "./run Path/to/URL/File" this will run for all URL's within the txt at the path specified
-7) "./run test" runs the test suite and returns coverage
+3. **Change Directory:**
+   Navigate into the project directory:
+   ```bash
+   cd ece461_team20_phase2
+   ```
 
-## Example setup:
-2 files you will need to setup in your own environment will be the txt file containing your URLS as well as your .env file. These 
-should be stored within the ECE461/ directory and are unique between users. Here is an example on how to implement them:
+4. **Install Dependencies:**
+   Run the following command to install all necessary dependencies:
+   ```bash
+   ./run install
+   ```
 
--URL.txt: This file is stored within the project enviroment and acts as a very limited example of how you should
-  set up your URL file so that it can be correctly parsed by the program. to run this example type "./run URL.txt" into
-  the terminal.
+5. **Run Individual Tests:**
+   To run a specific test, use:
+   ```bash
+   ./run <file_name>.txt
+   ```
 
--.env: Make sure this file has 3 arguments set like this:
+6. **Run the Test Suite:**
+   To execute the entire test suite, use:
+   ```bash
+   ./run test
+   ```
 
-  GITHUB_TOKEN="your_token"
-
-  LOG_FILE=Path/to/Your/Log/File  # Path to the log file
-
-  LOG_LEVEL=2     # Set verbosity level (0: silent, 1: info, 2: debug)
-
+7. **Syntax Checker:**
+   Refer to the [syntax checker](#) for ensuring correctness.
 
 ## How to interact with the project:
-  - The function of this file is to take in the input from the command line (being ./run install, ./run URL, and ./run test).
-  - For the install function it should install the the necessary dependanies needed in order for the code to run.
-  - The URL function will take a path to a file that has URLs of GitHub and npm repositories. It will then perform calculations
-  and make calls on these repostiories in order to print out a netscore. These calculations are dont in metrics.ts
-  - The test function should run a series of tests on the code by inputing sample URLs to check the total coverage that this 
-  project has.
-  - The command "npx mocha dist/test.js" runs a more detailed test breakdown, including all failed tests and what exactly failed.
-
-
-
+* add a design of our project here, along with repo structure.
 
 
 ## What metrics we use to calculate NetScore and our justification:
