@@ -1,21 +1,13 @@
 /*
-File Name: 
-  run.ts
+filename: run.ts
 
-Function: 
-  - The function of this file is to take in the input from the command line (being ./run install, ./run URL, and ./run test).
-  - For the install function it should install the the necessary dependanies needed in order for the code to run.
-  - The URL function will take a path to a file that has URLs of GitHub and npm repositories. It will then perform calculations
-  and make calls on these repostiories in order to print out a netscore. These calculations are dont in metrics.ts
-  - The test function should run a series of tests on the code by inputing sample URLs to check the total coverage that this 
-  project has. This code is in test.ts.
+Description:
+  This file is to take in `./run <file_name>.txt | test` and provide correct output according to the SPEC. 
+
+  1.) If it recieves `<file_name>.txt`, it will parse each URL within the file and return the calculated metric scores for each URL. 
+  2.) If it recieves `test`, it will run the test suite.
 */
 
-
-import dotenv from 'dotenv';
-dotenv.config();
-
-//console.log('GITHUB_TOKEN:', process.env.GITHUB_TOKEN);
 import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
 import logger, { flushLogs } from './logger';
 import * as performance from 'perf_hooks';
@@ -24,8 +16,16 @@ import * as fs from 'fs';
 import axios from 'axios';
 import { exec } from 'child_process';
 
+
+/* processUrl:
+  1.) determines which URL is passed (GitHub or NPM) and calls the proper metric calculation function.
+  2.) calculates the netScore and handles all rounding for each score.
+  3.) returns the results.
+*/
 async function processUrl(url: string): Promise<any> {
   const netScoreStartTime = performance.performance.now();
+
+  // init metric scores. 
   let results: any = { 
     URL: url,
     NetScore: '-1',
@@ -42,6 +42,7 @@ async function processUrl(url: string): Promise<any> {
     License_Latency: '-1'
   };
 
+  // determine which type of URL is passed in (NPM, GitHub, or neither.)
   logger.info("Processing URL: " + url);
   if (url.startsWith('https://github.com/')) {
     await processGithubUrl(url, results);
@@ -56,6 +57,8 @@ async function processUrl(url: string): Promise<any> {
 
   // Calculate NetScore (Use -1 where metrics are not yet implemented)
   logger.info("Calculating NetScore for URL: " + url);
+  
+  // if any of the metrics couldn't be calculated - automatically make netScore 0. 
   if (
     parseFloat(results.License) === 0 || 
     results.License === '-1' ||   
@@ -65,6 +68,8 @@ async function processUrl(url: string): Promise<any> {
     results.ResponsiveMaintainer === '-1'
   ) {
     results.NetScore = '0.00';
+
+  // otherwise, calculate netscore. 
   } else {
     const netScore = (
       parseFloat(results.BusFactor) * 0.2 +
@@ -87,14 +92,12 @@ async function processUrl(url: string): Promise<any> {
     }
   }
 
-  logger.info("Finished processing URL: " + url + " with NetScore: " + results.NetScore);
-  // Return results
   return results;
 }
 
 async function processGithubUrl(url: string, results: any) {
 
-  //Checking for INVALIDTOKEN before continuing with 
+  // check for invalid token. 
   try {
     const token = process.env.GITHUB_TOKEN;
     if (!token || token === 'INVALIDTOKEN') {
@@ -112,12 +115,11 @@ async function processGithubUrl(url: string, results: any) {
   const repoName = url.replace('https://github.com/', '').replace('/', '_');
   const localPath = path.join(__dirname, '..', 'repos', repoName);
 
-  // Ensure the repos directory exists
+  // assert repo directory exists. 
   if (!fs.existsSync(localPath)) {
     fs.mkdirSync(path.join(__dirname, '..', 'repos'), { recursive: true });
   }
   
-  logger.info("Cloning GitHub repo for metrics calculation: " + repoName);
   try {
     await cloneRepo(url, localPath);
   } catch (error) {
@@ -162,6 +164,8 @@ async function processGithubUrl(url: string, results: any) {
       results.License_Latency = parseFloat(((performance.performance.now() - startTimes.license) / 1000).toFixed(3));
     })
   ]);
+
+  // We don't need to return anything since we modify the original `results` variable directly. 
 }
 
 async function processNpmUrl(url: string, results: any) {
@@ -199,7 +203,7 @@ async function processNpmUrl(url: string, results: any) {
   }
 }
 
-
+// this is the function that is called in main in order to process all of the URLs. 
 async function processAllUrls(urls: string[]) {
   const resultsArray: any[] = [];
 
@@ -213,29 +217,15 @@ async function processAllUrls(urls: string[]) {
   // Sort results by NetScore from highest to lowest
   resultsArray.sort((a, b) => parseFloat(b.NetScore) - parseFloat(a.NetScore));
 
-  logger.info("Finished processing all URLs. Displaying sorted results.");
-
   // Output sorted results
   resultsArray.forEach(result => console.log(JSON.stringify(result)));
 }
 
-
 async function main() {
-  require('dotenv').config(); // Necessary for GITHUB_TOKEN
   const command = process.argv[2];
-
-  if (command === 'install') {//THIS FUNCTION WAS BYPASSED SLIGHTLY FOR AUTOGRADING PURPOSES WITH TAs
-    try {
-      logger.info('Running "install" command');
-      const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
-      const dependencies = packageJson.dependencies ? Object.keys(packageJson.dependencies) : [];
-      console.log(`${dependencies.length} dependencies installed...`);
-      process.exit(0); // Exit with 0 on success
-    } catch (error) {
-      console.error("Installation error:", error);
-      process.exit(1); // Exit with 1 on failure
-    }
-  } else if (command && command.endsWith('.txt')) {
+  
+  // ./run <url_file>.txt
+  if (command && command.endsWith('.txt')) {
     logger.info('Running URL processing from file: ' + command);  // Log file processing info
     if (!fs.existsSync(command)) {
       logger.debug("Invalid file path provided: " + command);  // Log invalid path
@@ -252,24 +242,45 @@ async function main() {
       console.error("Error processing URLs:", error);
       process.exit(1); // Exit with 1 if any errors occur during URL processing
     }
-  } else if (command === 'test') { // "./run test" command is right here
-    console.log('Test running...');
-    exec('npx mocha dist/test.js', (error, stdout, stderr) => {
+  
+  // ./run test
+  } else if (command === 'test') {
+    exec('npx nyc mocha -r ts-node/register src/**/*.ts', (error, stdout, stderr) => {
       if (error) {
           console.error(`Test failed: ${stderr}`);
-          process.exit(1); // Exit with 1 if tests fail
+          process.exit(1);  // Exit with error
       } else {
-          console.log(stdout);
-          console.log('Test completed.');
-          process.exit(0); // Exit with 0 on successful test completion
+          // Regex to capture the total test cases and passed test cases
+          const testCasesRegex = /(\d+)\/(\d+) test cases passed\./;
+          const testCasesMatch = stdout.match(testCasesRegex);
+  
+          // Regex to capture the line coverage percentage for all files
+          const coverageRegex = /All files\s+\|\s+(\d+\.\d+)\s+\|\s+(\d+\.\d+)\s+\|\s+(\d+\.\d+)\s+\|\s+(\d+\.\d+)\s+/;
+          const coverageMatch = stdout.match(coverageRegex);
+  
+          let passed = 0;
+          let total = 0;
+          let coverage = -1; // Default value for coverage if not found
+  
+          if (testCasesMatch) {
+              passed = parseInt(testCasesMatch[1], 10);
+              total = parseInt(testCasesMatch[2], 10);
+          } else {
+              console.log('Test case information not found in output.');
+          }
+  
+          if (coverageMatch) {
+              coverage = parseInt(coverageMatch[1], 10); // Capture the percentage
+          } else {
+              console.log('Coverage percentage not found in output.');
+          }
+  
+          console.log(`${passed}/${total} test cases passed. ${coverage}% line coverage achieved.`);
+          process.exit(0);  // Exit successfully
       }
   });
-  await flushLogs(); // Make sure logger finished writing // NOTE: THIS PIECE OF SHIT LINE WILL NOT RUN NO MATTER WHAT I CHANGE
-  } else {
-    logger.info("Invalid command line input");
-    logger.debug("Invalid command line input");
-    process.exit(1);
-  }
+  await flushLogs(); // Make sure logger finished writing. 
+  } 
 }
 
 main().catch(error => {

@@ -1,5 +1,0 @@
-Should netscore be 0 if one test isnt run?
-
-Do "git clone URL -depth1" to just get the head of the repo for ramp up
-Dont use process.exec, use a library for this to protect from exploitation
-

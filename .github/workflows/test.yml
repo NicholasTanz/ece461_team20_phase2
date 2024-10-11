@@ -1,0 +1,36 @@
+name: Test Suite
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'  # Specify the version of Node.js you want to use
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npx nyc mocha -r ts-node/register src/**/*.ts
+        env:  # Specify environment variables if needed
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          LOG_FILE: /tmp/log
+          LOG_LEVEL: 0
+
+      - name: Comment on deployment
+        run: |
+          echo "Deployment step will be added here later."
+          # Alternatively, you can add a comment using the GitHub CLI if needed
+          # gh pr comment ${{ github.event.pull_request.number }} --body "Deployment step to be added later."

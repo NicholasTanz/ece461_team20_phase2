@@ -118,7 +118,6 @@ export async function getBusFactor(url: string): Promise<number> {
 // Function to clone a GitHub repository locally using simple-git
 export async function cloneRepo(url: string, localPath: string): Promise<void> {
   const git = simpleGit();
-  logger.info(`Cloning GitHub repo for Ramp Up calculation: ${url} into ${localPath}`);
 
   try {
     await git.clone(url, localPath, ['--depth', '1']);
