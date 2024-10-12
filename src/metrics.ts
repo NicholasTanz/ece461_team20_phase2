@@ -39,7 +39,10 @@ import fetch from 'node-fetch';
 
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
-const PER_PAGE = 100; // GitHub API truncates certain number of contributors
+
+// lowering per_page cnt so we don't hit api rate limit quickly during development. 
+
+const PER_PAGE = 10; // GitHub API truncates certain number of contributors
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
 const octokit = new Octokit({ 
   auth: GITHUB_TOKEN,
@@ -517,5 +520,125 @@ export async function calculateResponsiveMaintainerMetric(url: string): Promise<
   } catch (error: any) {
     logger.debug(`Error calculating Responsive Maintainer metric for ${url}: ${error.message}`);
     return 0;
+  }
+}
+
+export async function calculatePinnedDependenciesMetric(url: string): Promise<number> {
+  const repoPath = url.replace('https://github.com/', '');
+  const [owner, repo] = repoPath.split('/');  
+
+  try {
+    // Step 1: Fetch the package.json file from the repository
+    const { data } = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+      owner,
+      repo,
+      path: 'package.json',
+    });
+
+    // Check if data is an array (directory listing) or an object (single file)
+    let packageJsonContent: string;
+
+    if (Array.isArray(data)) {
+      throw new Error('Expected a file, but received a directory listing.');
+    } else if ('content' in data) {
+      // Decode the base64 content of the file
+      packageJsonContent = Buffer.from(data.content, 'base64').toString('utf8');
+    } else {
+      throw new Error('Received unexpected data format.');
+    }
+
+    const packageJson = JSON.parse(packageJsonContent);
+
+    const dependencies = packageJson.dependencies || {};
+    const devDependencies = packageJson.devDependencies || {};
+    const allDependencies = { ...dependencies, ...devDependencies };
+
+    // If there are no dependencies, return 1.0
+    if (Object.keys(allDependencies).length === 0) {
+      return 1.0; 
+    }
+
+  // Count the number of pinned dependencies to at least a major and minor version
+  const pinnedCount = Object.values(allDependencies).filter(version => 
+    typeof version === 'string' && (  // Ensure version is a string
+      /^(?:\^|~)?(\d+)\.(\d+)(\.\d+)?$/.test(version) ||  // Matches versions like 2.3.0, 2.3, ^2.3.0, ~2.3
+      /^(?:\^|~)?(\d+)\.(\d+)$/.test(version)            // Matches versions like 2.3, ^2.3
+    )
+  ).length;
+
+    // Return the fraction of pinned dependencies
+    return pinnedCount / Object.keys(allDependencies).length;
+
+  } catch (error: any) {
+    console.error(`Error fetching package.json from ${owner}/${repo}: ${error.message}`);
+    return 0; // Return early in case of error
+  }
+}
+
+
+
+export async function calculateCodeFromPRsMetric(url: string): Promise<number> {
+  const repoPath = url.replace('https://github.com/', '');
+  const [owner, repo] = repoPath.split('/');
+
+  let totalLines = 0;
+  let prLines = 0;
+
+  try {
+    const commitsResponse = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+      owner,
+      repo,
+      per_page: PER_PAGE
+    });
+
+      // Search for PRs based on the commit message
+      const prsResponse = await octokit.request('GET /repos/{owner}/{repo}/pulls', {
+        owner,
+        repo,
+        state: 'closed', // Consider closed PRs
+      });
+
+    for (const commit of commitsResponse.data) {
+      // Step 2: Check if this commit has an associated PR
+      const commitMessage = commit.commit.message;
+
+      // Find PRs that contain this commit (some PRs have commit messages that include the SHA)
+      const associatedPR = prsResponse.data.find(pr => 
+        pr.merge_commit_sha === commit.sha || commitMessage.includes(`#${pr.number}`) // Check if the commit message references the PR
+      );
+
+      if (associatedPR) {
+        // Step 3: Get the diff for the PR to count the lines changed
+        const diffResponse = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
+          owner,
+          repo,
+          pull_number: associatedPR.number,
+        });
+
+        const linesChanged = diffResponse.data.reduce((sum, file) => sum + file.changes, 0);
+        prLines += linesChanged; // Count lines introduced through PRs
+      }
+
+      // Always count total lines for reference
+      const commitDiff = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}', {
+        owner,
+        repo,
+        ref: commit.sha,
+      });
+      
+      if(commitDiff.data.files) {
+      const totalLinesChanged = commitDiff.data.files.reduce((sum, file) => sum + file.changes, 0);
+      totalLines += totalLinesChanged;
+      } else {
+        totalLines += prLines;
+      }
+    }
+
+    // Calculate the fraction of lines introduced via PRs
+    return totalLines > 0 ? prLines / totalLines : 0;
+
+  } catch (error: any) {
+    console.error(`Error calculating metric for ${owner}/${repo}: ${error.message}`);
+    return 0; // Return early in case of error
   }
 }
