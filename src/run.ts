@@ -8,7 +8,7 @@ Description:
   2.) If it recieves `test`, it will run the test suite.
 */
 
-import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
+import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric, calculatePinnedDependenciesMetric, calculateCodeFromPRsMetric } from './metrics';
 import logger, { flushLogs } from './logger';
 import * as performance from 'perf_hooks';
 import * as path from 'path';
@@ -39,7 +39,11 @@ async function processUrl(url: string): Promise<any> {
     ResponsiveMaintainer: '-1',
     ResponsiveMaintainer_Latency: '-1',
     License: '-1',
-    License_Latency: '-1'
+    License_Latency: '-1',
+    pinnedDependencies: "-1",
+    pinnedDependencies_Latency: "-1",
+    codeFromPRs: "-1",
+    codeFromPRs_Latency: "-1"
   };
 
   // determine which type of URL is passed in (NPM, GitHub, or neither.)
@@ -65,7 +69,9 @@ async function processUrl(url: string): Promise<any> {
     results.BusFactor === '-1' || 
     results.RampUp === '-1' || 
     results.Correctness === '-1' || 
-    results.ResponsiveMaintainer === '-1'
+    results.ResponsiveMaintainer === '-1' ||
+    results.pinnedDependencies === '-1' ||
+    results.codeFromPRs === '-1'
   ) {
     results.NetScore = '0.00';
 
@@ -76,7 +82,9 @@ async function processUrl(url: string): Promise<any> {
       parseFloat(results.RampUp) * 0.1 +
       parseFloat(results.Correctness) * 0.1 +
       parseFloat(results.ResponsiveMaintainer) * 0.1 +
-      parseFloat(results.License) * 0.5
+      parseFloat(results.License) * 0.3 +
+      parseFloat(results.pinnedDependencies) * .1 +
+      parseFloat(results.codeFromPRs) * .1
     );
     results.NetScore = netScore.toFixed(2);
   }
@@ -133,6 +141,8 @@ async function processGithubUrl(url: string, results: any) {
     correctness: performance.performance.now(),
     responsiveMaintainer: performance.performance.now(),
     license: performance.performance.now(),
+    pinnedDependencies: performance.performance.now(),
+    codeFromPRs: performance.performance.now()
   };
 
   // Run all metrics in parallel
@@ -141,7 +151,9 @@ async function processGithubUrl(url: string, results: any) {
     rampUpScore,
     test_ratio,
     responsiveMaintainerScore,
-    licenseResult
+    licenseResult,
+    pinnedDependencies,
+    codeFromPRs
   ] = await Promise.all([
     getBusFactor(url).then(count => {
       results.BusFactor = count >= 0 ? parseFloat(count.toFixed(2)) : -1;
@@ -162,7 +174,15 @@ async function processGithubUrl(url: string, results: any) {
     checkLicenseCompatibility(url).then(licenseResult => {
       results.License = parseFloat(licenseResult.score.toFixed(2));
       results.License_Latency = parseFloat(((performance.performance.now() - startTimes.license) / 1000).toFixed(3));
-    })
+    }),
+    calculatePinnedDependenciesMetric(url).then(pinnedDependencies => {
+      results.pinnedDependencies = parseFloat(pinnedDependencies.toFixed(2));
+      results.pinnedDependencies_Latency = parseFloat(((performance.performance.now() - startTimes.pinnedDependencies) / 1000).toFixed(3));
+    }),
+    calculateCodeFromPRsMetric(url).then(codeFromPRs => {
+      results.codeFromPRs = parseFloat(codeFromPRs.toFixed(2));
+      results.codeFromPRs_Latency = parseFloat(((performance.performance.now() - startTimes.codeFromPRs) / 1000).toFixed(3));
+    }),
   ]);
 
   // We don't need to return anything since we modify the original `results` variable directly. 
