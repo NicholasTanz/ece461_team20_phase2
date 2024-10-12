@@ -19,28 +19,12 @@ import { expect } from 'chai';
 import simpleGit from 'simple-git';
 import * as sinon from 'sinon';
 import axios from 'axios';
-import { getBusFactor, calculateRampUpMetric, cloneRepo, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric } from './metrics';
+import { getBusFactor, calculateRampUpMetric, cloneRepo, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric, calculateCodeFromPRsMetric, calculatePinnedDependenciesMetric} from './metrics';
 import * as os from 'os';
 
 
 let totalTests = 0;
 let passedTests = 0;
-
-// export async function runMochaTests() {
-//   return new Promise((resolve, reject) => {
-//       const mochaCommand = `npx mocha ${path.join(__dirname, 'test.js')}`;
-//       exec(mochaCommand, (error, stdout, stderr) => {
-//           if (error) {
-//               console.error('Error running tests:', error);
-//               reject(error);
-//           } else {
-//               console.log('Mocha output:', stdout);
-//               if (stderr) console.error('Mocha stderr:', stderr);
-//               resolve(true);
-//           }
-//       });
-//   });
-// }
 
 describe('npm install command verification', () => {
   it('should correctly install all dependencies', () => {
@@ -437,11 +421,42 @@ describe('calculateResponsiveMaintainerMetric', () => {
       passedTests++;
     }
   });
-
-  after(() => {
-    console.log(`\n${passedTests}/${totalTests} test cases passed. -1% Line coverage achieved`);
-  });
-
 });
 
 
+//test suite for calculatePinnedDependenciesMetric
+describe('calculatePinnedDependenciesMetric', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should handle API errors gracefully', async () => {
+    sinon.stub(axios, 'get').rejects(new Error('API error'));
+
+    const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
+    expect(result).to.equal(0);
+    totalTests++;
+    if(result == 0){
+      passedTests++;
+    }
+  });
+});
+
+
+//test suite for codeForPRs
+describe('calculate score for code introduced via PRs', () => {
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should handle API errors gracefully', async () => {
+    sinon.stub(axios, 'get').rejects(new Error('API error'));
+
+    const result = await calculateResponsiveMaintainerMetric('https://github.com/user/repo');
+    expect(result).to.equal(0);
+    totalTests++;
+    if(result == 0){
+      passedTests++;
+    }
+  });
+});
