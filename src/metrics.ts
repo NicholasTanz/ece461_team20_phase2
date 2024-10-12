@@ -40,7 +40,7 @@ import fetch from 'node-fetch';
 const GITHUB_API_URL = 'https://api.github.com/repos'; // GitHub API endpoint for repository data
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/'; // NPM registry endpoint for package data
 
-const PER_PAGE = 10; // GitHub API truncates certain number of contributors
+const PER_PAGE = 100; // GitHub API truncates certain number of contributors
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // GitHub personal access token for authentication
 const octokit = new Octokit({ 
   auth: GITHUB_TOKEN,
