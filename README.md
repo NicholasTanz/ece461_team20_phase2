@@ -77,3 +77,8 @@ how to interact with it onces it has been set up, the metrics we use to calculat
   License: This Metric measures if a license is compatible with the company license which uses a GNU LGPLv2.1 licsense. We'll check
   through a packages README or package.json and check to see if their license is compatible. Once we have this information we'll output with a 
   0 or 1 based on if the license is compatible or not.
+
+pinned Dependencies Metric: this metric is measured as described in the [spec](https://purdue.brightspace.com/d2l/le/content/1096370/viewContent/17430283/View). We locate the package.json file which contains dependencies and then check which ones are tied to specific major+minor version.
+
+Code Introduced Via PRS and code review: This metric is measured by taking a sample of the last 100 commits and seeing how many of those commits came from a pull request. We measure the specific number of lines modified from a given commit and compare to the total amount of lines modified. (could possibily optimize by reducing api calls.)
+
