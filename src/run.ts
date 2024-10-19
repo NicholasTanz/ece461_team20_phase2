@@ -40,10 +40,10 @@ async function processUrl(url: string): Promise<any> {
     ResponsiveMaintainer_Latency: '-1',
     License: '-1',
     License_Latency: '-1',
-    pinnedDependencies: "-1",
-    pinnedDependencies_Latency: "-1",
-    codeFromPRs: "-1",
-    codeFromPRs_Latency: "-1"
+    GoodPinningPractice: "-1",
+    GoodPinningPracticeLatency: "-1",
+    PullRequest: "-1",
+    PullRequestLatency: "-1"
   };
 
   // determine which type of URL is passed in (NPM, GitHub, or neither.)
@@ -70,8 +70,8 @@ async function processUrl(url: string): Promise<any> {
     results.RampUp === '-1' || 
     results.Correctness === '-1' || 
     results.ResponsiveMaintainer === '-1' ||
-    results.pinnedDependencies === '-1' ||
-    results.codeFromPRs === '-1'
+    results.GoodPinningPractice === '-1' ||
+    results.PullRequest === '-1'
   ) {
     results.NetScore = '0.00';
 
@@ -83,8 +83,8 @@ async function processUrl(url: string): Promise<any> {
       parseFloat(results.Correctness) * 0.1 +
       parseFloat(results.ResponsiveMaintainer) * 0.1 +
       parseFloat(results.License) * 0.3 +
-      parseFloat(results.pinnedDependencies) * .1 +
-      parseFloat(results.codeFromPRs) * .1
+      parseFloat(results.GoodPinningPractice) * .1 +
+      parseFloat(results.PullRequest) * .1
     );
     results.NetScore = netScore.toFixed(2);
   }
@@ -141,8 +141,8 @@ async function processGithubUrl(url: string, results: any) {
     correctness: performance.performance.now(),
     responsiveMaintainer: performance.performance.now(),
     license: performance.performance.now(),
-    pinnedDependencies: performance.performance.now(),
-    codeFromPRs: performance.performance.now()
+    goodPinningPractice: performance.performance.now(),
+    pullRequest: performance.performance.now()
   };
 
   // Run all metrics in parallel
@@ -152,8 +152,8 @@ async function processGithubUrl(url: string, results: any) {
     test_ratio,
     responsiveMaintainerScore,
     licenseResult,
-    pinnedDependencies,
-    codeFromPRs
+    goodPinningPractice,
+    pullRequest
   ] = await Promise.all([
     getBusFactor(url).then(count => {
       results.BusFactor = count >= 0 ? parseFloat(count.toFixed(2)) : -1;
@@ -175,13 +175,13 @@ async function processGithubUrl(url: string, results: any) {
       results.License = parseFloat(licenseResult.score.toFixed(2));
       results.License_Latency = parseFloat(((performance.performance.now() - startTimes.license) / 1000).toFixed(3));
     }),
-    calculatePinnedDependenciesMetric(url).then(pinnedDependencies => {
-      results.pinnedDependencies = parseFloat(pinnedDependencies.toFixed(2));
-      results.pinnedDependencies_Latency = parseFloat(((performance.performance.now() - startTimes.pinnedDependencies) / 1000).toFixed(3));
+    calculatePinnedDependenciesMetric(url).then(goodPinningPractice => {
+      results.goodPinningPractice = parseFloat(goodPinningPractice.toFixed(2));
+      results.GoodPinningPracticeLatency = parseFloat(((performance.performance.now() - startTimes.goodPinningPractice) / 1000).toFixed(3));
     }),
-    calculateCodeFromPRsMetric(url).then(codeFromPRs => {
-      results.codeFromPRs = parseFloat(codeFromPRs.toFixed(2));
-      results.codeFromPRs_Latency = parseFloat(((performance.performance.now() - startTimes.codeFromPRs) / 1000).toFixed(3));
+    calculateCodeFromPRsMetric(url).then(pullRequest => {
+      results.pullRequest = parseFloat(pullRequest.toFixed(2));
+      results.PullRequestLatency = parseFloat(((performance.performance.now() - startTimes.pullRequest) / 1000).toFixed(3));
     }),
   ]);
 
