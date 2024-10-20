@@ -225,7 +225,7 @@ async function processNpmUrl(url: string, results: any) {
 }
 
 // this is the function that is called in main in order to process all of the URLs. 
-async function processAllUrls(urls: string[]) {
+export async function processAllUrls(urls: string[]) {
   const resultsArray: any[] = [];
 
   for (const url of urls) {
@@ -254,7 +254,7 @@ function startServer() {
   });
 
   // Add your API routes here
-  app.use('/api', packageRoutes);
+  app.use('/', packageRoutes);
   
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);

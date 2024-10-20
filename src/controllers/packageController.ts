@@ -1,12 +1,45 @@
 import { Request, Response } from 'express';
+import {processAllUrls} from '../run'
 
 // Controller for handling package data
 export const getPackages = (req: Request, res: Response) => {
   res.json({ message: 'Fetching packages...' });
 };
 
-export const ratePackage = (req: Request, res: Response) => {
-  const { packageId, rating } = req.body;
-  // Here you would add logic to rate the package
-  res.status(201).json({ message: `Rated package ${packageId} with ${rating}` });
-};
+export async function getPackageRating(req: Request, res: Response) {
+    const { id } = req.params; // Get the package ID from the path
+    const authToken = req.header('X-Authorization'); // Get the auth token from the header
+  
+    // Check for missing fields
+    if (!id) {
+      return res.status(400).json({ error: 'Missing field(s) in the PackageID' });
+    }
+    if (!authToken) {
+      return res.status(403).json({ error: 'Authentication failed due to invalid or missing AuthenticationToken.' });
+    }
+  
+    try {
+      // Validate the package ID and authorization token here...
+
+      // change later. 
+      const packageUrlFromId: string[] = ['https://github.com/mrdoob/three.js/'];
+
+      // Fetch the package rating
+      const packageRating = await processAllUrls(packageUrlFromId);
+      
+
+      /* 
+
+      add handling later. 
+
+      if (!packageRating) {
+        return res.status(404).json({ error: 'Package does not exist.' });
+      }*/
+  
+      // Return the package rating
+      return res.status(200).json(packageRating);
+    } catch (error) {
+      console.error('Error fetching package rating:', error);
+      return res.status(500).json({ error: 'The package rating system choked on at least one of the metrics.' });
+    }
+  }

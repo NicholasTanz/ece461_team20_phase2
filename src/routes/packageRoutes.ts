@@ -5,6 +5,6 @@ const router = Router();
 
 // Define your routes
 router.get('/packages', getPackages);
-router.post('/rate', ratePackage);
+router.get('/package/:id/rate', ratePackage);
 
 export default router;
