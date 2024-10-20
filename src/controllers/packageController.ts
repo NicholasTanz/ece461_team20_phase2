@@ -6,16 +6,18 @@ export const getPackages = (req: Request, res: Response) => {
   res.json({ message: 'Fetching packages...' });
 };
 
-export async function getPackageRating(req: Request, res: Response) {
+export async function getPackageRating(req: Request, res: Response): Promise<void> {
     const { id } = req.params; // Get the package ID from the path
     const authToken = req.header('X-Authorization'); // Get the auth token from the header
   
     // Check for missing fields
     if (!id) {
-      return res.status(400).json({ error: 'Missing field(s) in the PackageID' });
+        res.status(400).json({ error: 'Missing field(s) in the PackageID' });
+        return
     }
     if (!authToken) {
-      return res.status(403).json({ error: 'Authentication failed due to invalid or missing AuthenticationToken.' });
+      res.status(403).json({ error: 'Authentication failed due to invalid or missing AuthenticationToken.' });
+      return
     }
   
     try {
@@ -30,16 +32,16 @@ export async function getPackageRating(req: Request, res: Response) {
 
       /* 
 
-      add handling later. 
-
       if (!packageRating) {
         return res.status(404).json({ error: 'Package does not exist.' });
       }*/
   
       // Return the package rating
-      return res.status(200).json(packageRating);
+      res.status(200).json(packageRating);
+      return
     } catch (error) {
       console.error('Error fetching package rating:', error);
-      return res.status(500).json({ error: 'The package rating system choked on at least one of the metrics.' });
+      res.status(500).json({ error: 'The package rating system choked on at least one of the metrics.' });
+      return
     }
   }
