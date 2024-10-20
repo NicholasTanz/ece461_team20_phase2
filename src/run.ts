@@ -15,7 +15,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
 import { exec } from 'child_process';
-
+import express from 'express';
+import packageRoutes from './routes/packageRoutes';
 
 /* processUrl:
   1.) determines which URL is passed (GitHub or NPM) and calls the proper metric calculation function.
@@ -224,7 +225,7 @@ async function processNpmUrl(url: string, results: any) {
 }
 
 // this is the function that is called in main in order to process all of the URLs. 
-async function processAllUrls(urls: string[]) {
+export async function processAllUrls(urls: string[]) {
   const resultsArray: any[] = [];
 
   for (const url of urls) {
@@ -241,9 +242,32 @@ async function processAllUrls(urls: string[]) {
   resultsArray.forEach(result => console.log(JSON.stringify(result)));
 }
 
+// Set up express server
+function startServer() {
+  const app = express();
+  const port = 3000; // change later. 
+
+  app.use(express.json());
+
+  app.get('/health', (req, res) => {
+    res.status(200).send('Server is running!');
+  });
+
+  // Add your API routes here
+  app.use('/', packageRoutes);
+  
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+    logger.info(`Server started on port ${port}`);
+  });
+}
+
 async function main() {
   const command = process.argv[2];
   
+  // always spin up server. 
+  startServer();  // Start server immediately
+
   // ./run <url_file>.txt
   if (command && command.endsWith('.txt')) {
     logger.info('Running URL processing from file: ' + command);  // Log file processing info
