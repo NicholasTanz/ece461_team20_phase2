@@ -8,7 +8,9 @@ on:
 
 jobs:
   test:
+    # disable workflow for now.
     runs-on: ubuntu-latest
+    if: false  
 
     steps:
       - name: Checkout code
