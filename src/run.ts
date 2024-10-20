@@ -16,7 +16,6 @@ import * as fs from 'fs';
 import axios from 'axios';
 import { exec } from 'child_process';
 import express from 'express';
-import bodyParser from 'body-parser';
 import packageRoutes from './routes/packageRoutes';
 
 /* processUrl:
@@ -255,6 +254,8 @@ function startServer() {
   });
 
   // Add your API routes here
+  app.use('/api', packageRoutes);
+  
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
     logger.info(`Server started on port ${port}`);
