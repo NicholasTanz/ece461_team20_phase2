@@ -1,0 +1,77 @@
+import { Router, Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import logger from './logger';  // Import the existing logger
+
+const router = Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');  // Save files to 'uploads' directory
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);  // Generate unique file name
+  }
+});
+const upload = multer({ storage });
+
+// Ensure that the downloads directory exists
+const downloadsDir = path.join(__dirname, '../../downloads');
+if (!fs.existsSync(downloadsDir)) {
+  fs.mkdirSync(downloadsDir, { recursive: true });  // Create downloads folder if it doesn't exist
+}
+
+// Upload or update a package
+router.post('/upload', upload.single('package'), (req: Request, res: Response) => {
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const packageName = file.originalname;
+  const uploadPath = path.join(__dirname, '../../uploads', packageName);
+
+  // Check if the package exists and replace it
+  if (fs.existsSync(uploadPath)) {
+    fs.unlinkSync(uploadPath);  // Remove the old version
+    logger.info(`Package ${packageName} updated.`);
+  } else {
+    logger.info(`Package ${packageName} uploaded.`);
+  }
+
+  // Save the new package
+  fs.renameSync(file.path, uploadPath);
+
+  res.send(`Package ${packageName} uploaded/updated successfully.`);
+});
+
+// Download a package
+router.get('/download/:packageName', (req: Request, res: Response) => {
+  const packageName = req.params.packageName;
+  const uploadPath = path.join(__dirname, '../../uploads', packageName);
+
+  if (fs.existsSync(uploadPath)) {
+    // Move the file to the downloads folder (cut operation)
+    const downloadFilePath = path.join(downloadsDir, packageName);
+    fs.renameSync(uploadPath, downloadFilePath);  // Move the file from uploads to downloads
+
+    // Log the successful download and directory of the file
+    logger.info(`Package ${packageName} moved to downloads directory: ${downloadFilePath}`);
+
+    // Serve the file from the downloads directory
+    res.download(downloadFilePath, packageName, (err) => {
+      if (err) {
+        logger.error(`Error in downloading package ${packageName}: ${err}`);
+        res.status(500).send('Error in downloading file.');
+      }
+    });
+  } else {
+    logger.warn(`Package ${packageName} not found for download.`);
+    res.status(404).send('Package not found.');
+  }
+});
+
+export default router;

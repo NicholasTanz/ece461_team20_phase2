@@ -17,6 +17,7 @@ import axios from 'axios';
 import { exec } from 'child_process';
 import express from 'express';
 import packageRoutes from './routes/packageRoutes';
+import packageManager from './packageManager';
 
 /* processUrl:
   1.) determines which URL is passed (GitHub or NPM) and calls the proper metric calculation function.
@@ -255,6 +256,10 @@ function startServer() {
 
   // Add your API routes here
   app.use('/', packageRoutes);
+
+  // Add packageManager routes for upload/update and downloading
+  app.use('/', packageManager);  // Mount the packageManager routes
+
   
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
@@ -331,3 +336,6 @@ main().catch(error => {
   logger.debug('An error occurred:', error);
   process.exit(1);
 });
+
+// charlie's additions:
+
