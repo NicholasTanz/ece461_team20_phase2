@@ -75,3 +75,19 @@ router.get('/download/:packageName', (req: Request, res: Response) => {
 });
 
 export default router;
+
+import { fetchNpmPackageVersions } from './versionChecker';
+
+// Example usage
+async function showPackageVersions() {
+  const packageName = 'axios';  // Example npm package name
+
+  try {
+    const versions = await fetchNpmPackageVersions(packageName);
+    console.log(`Available versions for ${packageName}:`, versions);
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+showPackageVersions();
