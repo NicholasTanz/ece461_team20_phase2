@@ -7,7 +7,7 @@ export async function fetchNpmPackageVersions(packageName: string): Promise<stri
 
   try {
     // Fetch the package metadata from the npm registry
-    const response = await axios.get(registryUrl);
+    const response = await axios.get<{ versions: Record<string, unknown> }>(registryUrl);
     
     // Extract the versions object from the response
     const versions = response.data.versions;
@@ -21,7 +21,8 @@ export async function fetchNpmPackageVersions(packageName: string): Promise<stri
     // Return the available versions
     return availableVersions;
   } catch (error) {
-    logger.error(`Failed to fetch versions for package ${packageName}: ${error.message}`);
+    const errorMessage = (error as Error).message;
+    logger.error(`Failed to fetch versions for package ${packageName}: ${errorMessage}`);
     throw new Error(`Could not fetch versions for package ${packageName}`);
   }
 }
