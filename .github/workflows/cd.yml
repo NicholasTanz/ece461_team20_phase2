@@ -29,4 +29,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AKIAYMWVFL7R6HRB6ZWL }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.5ko9BrRwyMWHLIwqxEASq4MdS/iA/H9Ee31B1o9p }}
           AWS_REGION: ${{ secrets.us-east-1 }}
-
+        run: |
+          aws lambda update-function-code \
+            --function-name YourLambdaFunctionName \
+            --zip-file fileb://path/to/your/deployment/package.zip
