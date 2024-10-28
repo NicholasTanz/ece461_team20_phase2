@@ -112,3 +112,34 @@ describe('Package Manager Tests', () => {
     });
   });
 });
+
+// Utility function to clean up files ending with "test-package.zip"
+export function cleanTestPackageFiles() {
+  if (fs.existsSync(uploadDir)) {
+    fs.readdirSync(uploadDir).forEach((file) => {
+      if (file.endsWith('test-package.zip')) {
+        fs.unlinkSync(path.join(uploadDir, file));
+      }
+    });
+    console.log('Cleaned up test-package files');
+  } else {
+    console.log(`Directory "${uploadDir}" does not exist.`);
+  }
+}
+
+// Example Test Suite
+describe('Package Manager Tests', () => {
+  it('should upload a new package successfully', async () => {
+    const res = await request(app)
+      .post('/upload')
+      .attach('package', Buffer.from('sample data'), 'test-package.zip')
+      .expect(200);
+
+    expect(res.body).to.have.property('status', 'success');
+  });
+
+  // Additional tests can go here
+});
+
+// Run cleanup manually
+// cleanTestPackageFiles();
