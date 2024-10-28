@@ -8,9 +8,9 @@ on:
 
 jobs:
   test:
-    # disable workflow for now.
+    # enable workflow for now.
     runs-on: ubuntu-latest
-    if: false  
+    if: true  
 
     steps:
       - name: Checkout code
@@ -31,8 +31,13 @@ jobs:
           LOG_FILE: /tmp/log
           LOG_LEVEL: 0
 
-      - name: Comment on deployment
+      - name: Deploy to AWS
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AKIAYMWVFL7R6HRB6ZWL }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.5ko9BrRwyMWHLIwqxEASq4MdS/iA/H9Ee31B1o9p }}
+          AWS_REGION: ${{ secrets.us-east-1 }}
         run: |
-          echo "Deployment step will be added here later."
-          # Alternatively, you can add a comment using the GitHub CLI if needed
-          # gh pr comment ${{ github.event.pull_request.number }} --body "Deployment step to be added later."
+          aws lambda update-function-code \
+            --function-name ingestPackageFunction \
+            --zip-file fileb://uploads/package.zip
+
