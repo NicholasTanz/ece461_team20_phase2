@@ -24,7 +24,7 @@ import packageManager from './packageManager';
   2.) calculates the netScore and handles all rounding for each score.
   3.) returns the results.
 */
-async function processUrl(url: string): Promise<any> {
+export async function processUrl(url: string): Promise<any> {
   const netScoreStartTime = performance.performance.now();
 
   // init metric scores. 
@@ -338,4 +338,3 @@ main().catch(error => {
 });
 
 // charlie's additions:
-
