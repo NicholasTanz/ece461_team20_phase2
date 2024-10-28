@@ -113,21 +113,19 @@ describe('Package Manager Tests', () => {
   });
 });
 
-// Utility function to clean up test-package files
-function cleanTestPackageFiles() {
+// Utility function to clean up files ending with "test-package.zip"
+export function cleanTestPackageFiles() {
   if (fs.existsSync(uploadDir)) {
     fs.readdirSync(uploadDir).forEach((file) => {
-      if (file.startsWith('test-package')) {
+      if (file.endsWith('test-package.zip')) {
         fs.unlinkSync(path.join(uploadDir, file));
       }
     });
+    console.log('Cleaned up test-package files');
+  } else {
+    console.log(`Directory "${uploadDir}" does not exist.`);
   }
 }
-
-// Run the cleanup function after each test
-afterEach(() => {
-  cleanTestPackageFiles();
-});
 
 // Example Test Suite
 describe('Package Manager Tests', () => {
@@ -142,3 +140,6 @@ describe('Package Manager Tests', () => {
 
   // Additional tests can go here
 });
+
+// Run cleanup manually
+// cleanTestPackageFiles();
