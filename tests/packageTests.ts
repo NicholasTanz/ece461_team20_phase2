@@ -112,3 +112,33 @@ describe('Package Manager Tests', () => {
     });
   });
 });
+
+// Utility function to clean up test-package files
+function cleanTestPackageFiles() {
+  if (fs.existsSync(uploadDir)) {
+    fs.readdirSync(uploadDir).forEach((file) => {
+      if (file.startsWith('test-package')) {
+        fs.unlinkSync(path.join(uploadDir, file));
+      }
+    });
+  }
+}
+
+// Run the cleanup function after each test
+afterEach(() => {
+  cleanTestPackageFiles();
+});
+
+// Example Test Suite
+describe('Package Manager Tests', () => {
+  it('should upload a new package successfully', async () => {
+    const res = await request(app)
+      .post('/upload')
+      .attach('package', Buffer.from('sample data'), 'test-package.zip')
+      .expect(200);
+
+    expect(res.body).to.have.property('status', 'success');
+  });
+
+  // Additional tests can go here
+});
