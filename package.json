@@ -18,6 +18,8 @@
     "ndjson": "^2.0.0",
     "node-fetch": "^2.6.9",
     "simple-git": "^3.19.1",
+    "supertest": "^7.0.0",
+    "uuid": "^11.0.1",
     "winston": "^3.8.2"
   },
   "devDependencies": {
@@ -28,6 +30,7 @@
     "@types/node": "^18.0.0",
     "@types/node-fetch": "^2.6.4",
     "@types/sinon": "^17.0.3",
+    "@types/supertest": "^6.0.2",
     "chai": "^4.4.1",
     "minimatch": "^3.0.5",
     "mocha": "^10.7.3",

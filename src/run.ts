@@ -18,6 +18,7 @@ import { exec } from 'child_process';
 import express from 'express';
 import packageRoutes from './routes/packageRoutes';
 import packageManager from './packageManager';
+import app from './app';
 
 /* processUrl:
   1.) determines which URL is passed (GitHub or NPM) and calls the proper metric calculation function.
