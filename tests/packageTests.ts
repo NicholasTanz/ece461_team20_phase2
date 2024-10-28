@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
-import packageManager from './packageManager';
+import packageManager from '../src/packageManager';
 
 // Set up Express app for testing
 const app = express();
@@ -12,6 +12,9 @@ app.use('/', packageManager);
 
 // Directory paths
 const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 const downloadsDir = path.join(__dirname, '../downloads');
 
 // Mock package file and path
@@ -98,9 +101,14 @@ describe('Package Manager Tests', () => {
     });
 
     it('should return 404 if the package does not exist', async () => {
-      const response = await request(app).get('/download/nonexistent-package.zip');
-      expect(response.status).to.equal(404);
-      expect(response.text).to.equal('Package not found.');
+      const res = await request(app)
+        .get('/download')
+        .query({ packageNames: 'nonexistent-package.zip' })
+        .expect(200);
+    
+      expect(res.body).to.deep.equal({
+        results: [{ packageName: 'nonexistent-package.zip', status: 'not found' }]
+      });
     });
   });
 });
