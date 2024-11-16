@@ -118,3 +118,48 @@ showPackageVersions();
 
 export default router;
 
+// Directory where packages are stored
+const uploadsDir = path.join(__dirname, '../../uploads');
+
+export async function packageSearch(regexPattern: string): Promise<{ packageName: string, match: string }[]> {
+  const regex = new RegExp(regexPattern, 'i'); // Case-insensitive regex
+  const results: { packageName: string, match: string }[] = [];
+
+  const files = fs.readdirSync(uploadsDir);
+
+  for (const file of files) {
+    const packagePath = path.join(uploadsDir, file);
+    let readmeContent = '';
+
+    // Checks if the package has a README file
+    const readmePath = path.join(packagePath, 'README.md');
+    if (fs.existsSync(readmePath)) {
+      readmeContent = fs.readFileSync(readmePath, 'utf-8');
+    }
+
+    // Checks if the package name or README content matches the regex
+    if (regex.test(file) || regex.test(readmeContent)) {
+      results.push({ packageName: file, match: readmeContent });
+    }
+  }
+
+  return results;
+}
+
+router.post('/search', async (req: Request, res: Response): Promise<void> => {
+  const { regexPattern } = req.body;
+
+  if (!regexPattern) {
+    res.status(400).send('Regex pattern is required.');
+    return;
+  }
+
+  try {
+    const results = await packageSearch(regexPattern);
+    res.json({ results });
+    return;
+  } catch (error) {
+    res.status(500).send('Error searching for packages.');
+    return;
+  }
+});
