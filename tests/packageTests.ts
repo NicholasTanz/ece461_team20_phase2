@@ -1,145 +1,160 @@
 import request from 'supertest';
 import { expect } from 'chai';
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import packageManager from '../src/packageManager';
+import packageSender from '../src/packageSender';
+import packageReceiver from '../src/packageReceiver';
 
 // Set up Express app for testing
 const app = express();
 app.use(express.json());
-app.use('/', packageManager);
+app.use('/send', packageSender);
+app.use('/receive', packageReceiver);
 
-// Directory paths
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-const downloadsDir = path.join(__dirname, '../downloads');
+describe('Package Management Tests', () => {
+  // Mock data for testing
+  const testPackageContent = 'UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==';
+  const testJSProgram = `
+    if (process.argv.length === 7) {
+      console.log('Success');
+      process.exit(0);
+    } else {
+      console.log('Failed');
+      process.exit(1);
+    }
+  `;
+  const testURL = 'https://github.com/jashkenas/underscore';
 
-// Mock package file and path
-const testFileName = 'test-package.zip';
-const testFilePath = path.join(uploadDir, testFileName);
+  let uploadedPackageID: string;
 
-// Helper function to clean up files after tests
-function cleanupFile(filePath: string) {
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-}
-
-describe('Package Manager Tests', () => {
-  before(() => {
-    // Ensure necessary directories exist before tests
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    if (!fs.existsSync(downloadsDir)) fs.mkdirSync(downloadsDir, { recursive: true });
-  });
-
-  afterEach(() => {
-    // Clean up the uploaded test file after each test
-    cleanupFile(testFilePath);
-  });
-
-  // Test Upload Endpoint
-  describe('POST /upload', () => {
-    it('should upload a new package successfully', async () => {
+  // Test uploading a package with content
+  describe('POST /send/upload', () => {
+    it('should upload a new package with content successfully', async () => {
       const response = await request(app)
-        .post('/upload')
-        .attach('package', Buffer.from('test content'), 'test-package.zip');
-  
+        .post('/send/upload')
+        .send({
+          Content: testPackageContent,
+          JSProgram: testJSProgram,
+          Name: 'cool-package',
+          Version: '1.0.0'
+        });
+
       expect(response.status).to.equal(201);
-      const uploadedPackage = response.body;
-      const uploadedFileName = `${uploadedPackage.metadata.ID}-test-package.zip`;
-  
-      // Check if the uploaded file exists
-      const uploadedFilePath = path.join(uploadDir, uploadedFileName);
-      expect(fs.existsSync(uploadedFilePath)).to.be.true;
+      expect(response.body).to.have.property('metadata');
+      uploadedPackageID = response.body.metadata.ID;
+      expect(response.body.metadata.Name).to.equal('cool-package');
     });
 
-    it('should update an existing package', async () => {
-      // Create initial file to simulate existing package
-      fs.writeFileSync(testFilePath, 'initial content');
-
+    it('should upload a new package using URL successfully', async () => {
       const response = await request(app)
-        .post('/upload')
-        .attach('package', Buffer.from('updated content'), testFileName);
+        .post('/send/upload')
+        .send({
+          URL: testURL,
+          JSProgram: testJSProgram,
+          Name: 'cool-package-url',
+          Version: '1.0.0'
+        });
 
-      expect(response.status).to.equal(200);
-      expect(response.text).to.include('uploaded/updated successfully');
-      
-      // Check that file content has been updated
-      const fileContent = fs.readFileSync(testFilePath, 'utf-8');
-      expect(fileContent).to.equal('updated content');
+      expect(response.status).to.equal(201);
+      expect(response.body).to.have.property('metadata');
+      expect(response.body.metadata.Name).to.equal('cool-package-url');
     });
 
-    it('should return 400 if no file is uploaded', async () => {
-      const response = await request(app).post('/upload');
+    it('should return 400 if no package content is provided', async () => {
+      const response = await request(app)
+        .post('/send/upload')
+        .send({
+          Name: 'missing-content-package',
+          Version: '1.0.0'
+        });
+
       expect(response.status).to.equal(400);
-      expect(response.text).to.equal('No file uploaded.');
+      expect(response.body).to.have.property('error', 'No package content provided.');
+    });
+
+    it('should return 409 if package already exists', async () => {
+      const response = await request(app)
+        .post('/send/upload')
+        .send({
+          Content: testPackageContent,
+          JSProgram: testJSProgram,
+          Name: 'cool-package',
+          Version: '1.0.0'
+        });
+
+      expect(response.status).to.equal(409);
+      expect(response.body).to.have.property('error', 'Package already exists.');
     });
   });
 
-  // Test Download Endpoint
-  describe('GET /download/:packageName', () => {
-    beforeEach(() => {
-      // Create a file in the uploads folder to simulate an uploaded package
-      fs.writeFileSync(testFilePath, 'downloadable content');
-    });
-
-    afterEach(() => {
-      // Clean up any downloaded files
-      cleanupFile(path.join(downloadsDir, testFileName));
-    });
-
-    it('should download an existing package successfully', async () => {
-      const response = await request(app).get(`/download/${testFileName}`);
+  // Test updating a package
+  describe('POST /send/upload - Update package', () => {
+    it('should update an existing package with a higher version', async () => {
+      const response = await request(app)
+        .post('/send/upload')
+        .send({
+          Content: testPackageContent,
+          JSProgram: testJSProgram,
+          Name: 'cool-package',
+          Version: '1.1.0'
+        });
 
       expect(response.status).to.equal(200);
-      expect(response.headers['content-disposition']).to.include(`attachment; filename="${testFileName}"`);
-      expect(response.text).to.equal('downloadable content');
-      
-      // Ensure file was moved to downloads directory
-      const downloadedFilePath = path.join(downloadsDir, testFileName);
-      expect(fs.existsSync(downloadedFilePath)).to.be.true;
-      expect(fs.readFileSync(downloadedFilePath, 'utf-8')).to.equal('downloadable content');
+      expect(response.body.metadata.Version).to.equal('1.1.0');
+    });
+
+    it('should append a lower version package', async () => {
+      const response = await request(app)
+        .post('/send/upload')
+        .send({
+          Content: testPackageContent,
+          JSProgram: testJSProgram,
+          Name: 'cool-package',
+          Version: '0.9.0'
+        });
+
+      expect(response.status).to.equal(200);
+      expect(response.body.metadata.Version).to.equal('0.9.0');
+    });
+  });
+
+  // Test downloading a package
+  describe('GET /receive/download/:id', () => {
+    it('should download a package successfully by ID with content', async () => {
+      const response = await request(app)
+        .get(`/receive/download/${uploadedPackageID}`)
+        .expect(200);
+
+      expect(response.body).to.have.property('metadata');
+      expect(response.body.metadata.Name).to.equal('cool-package');
+      expect(response.body.data).to.have.property('Content');
+    });
+
+    it('should download a package successfully by ID with URL', async () => {
+      const response = await request(app)
+        .get('/receive/download/package-url-id') // Replace with actual ID if needed
+        .expect(200);
+
+      expect(response.body).to.have.property('metadata');
+      expect(response.body.data).to.have.property('URL');
     });
 
     it('should return 404 if the package does not exist', async () => {
-      const response = await request(app).get('/download/nonexistent-package.zip');
-      expect(response.status).to.equal(404);
-      expect(response.text).to.equal('Package not found.');
+      const response = await request(app)
+        .get('/receive/download/nonexistent-id')
+        .expect(404);
+
+      expect(response.body).to.have.property('error', 'Package not found.');
+    });
+  });
+
+  // Error handling tests
+  describe('Error Handling', () => {
+    it('should return 400 if no package ID is provided', async () => {
+      const response = await request(app)
+        .get('/receive/download/')
+        .expect(400);
+
+      expect(response.body).to.have.property('error', 'Package ID is required.');
     });
   });
 });
-
-// Utility function to clean up files ending with "test-package.zip"
-export function cleanTestPackageFiles() {
-  if (fs.existsSync(uploadDir)) {
-    fs.readdirSync(uploadDir).forEach((file) => {
-      if (file.includes('-test-package.zip')) {
-        fs.unlinkSync(path.join(uploadDir, file));
-        console.log(`Deleted: ${file}`);
-      }
-    });
-    console.log('Cleaned up test-package files');
-  } else {
-    console.log(`Directory "${uploadDir}" does not exist.`);
-  }
-}
-
-// Example Test Suite
-describe('Package Manager Tests', () => {
-  it('should upload a new package successfully', async () => {
-    const res = await request(app)
-      .post('/upload')
-      .attach('package', Buffer.from('sample data'), 'test-package.zip')
-      .expect(200);
-
-    expect(res.body).to.have.property('status', 'success');
-  });
-
-  // Additional tests can go here
-});
-
-// Run cleanup manually
-// cleanTestPackageFiles();
