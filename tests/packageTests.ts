@@ -45,11 +45,15 @@ describe('Package Manager Tests', () => {
     it('should upload a new package successfully', async () => {
       const response = await request(app)
         .post('/upload')
-        .attach('package', Buffer.from('test content'), testFileName);
-
-      expect(response.status).to.equal(200);
-      expect(response.text).to.include('uploaded/updated successfully');
-      expect(fs.existsSync(testFilePath)).to.be.true;
+        .attach('package', Buffer.from('test content'), 'test-package.zip');
+  
+      expect(response.status).to.equal(201);
+      const uploadedPackage = response.body;
+      const uploadedFileName = `${uploadedPackage.metadata.ID}-test-package.zip`;
+  
+      // Check if the uploaded file exists
+      const uploadedFilePath = path.join(uploadDir, uploadedFileName);
+      expect(fs.existsSync(uploadedFilePath)).to.be.true;
     });
 
     it('should update an existing package', async () => {
@@ -101,14 +105,9 @@ describe('Package Manager Tests', () => {
     });
 
     it('should return 404 if the package does not exist', async () => {
-      const res = await request(app)
-        .get('/download')
-        .query({ packageNames: 'nonexistent-package.zip' })
-        .expect(200);
-    
-      expect(res.body).to.deep.equal({
-        results: [{ packageName: 'nonexistent-package.zip', status: 'not found' }]
-      });
+      const response = await request(app).get('/download/nonexistent-package.zip');
+      expect(response.status).to.equal(404);
+      expect(response.text).to.equal('Package not found.');
     });
   });
 });
@@ -117,8 +116,9 @@ describe('Package Manager Tests', () => {
 export function cleanTestPackageFiles() {
   if (fs.existsSync(uploadDir)) {
     fs.readdirSync(uploadDir).forEach((file) => {
-      if (file.endsWith('test-package.zip')) {
+      if (file.includes('-test-package.zip')) {
         fs.unlinkSync(path.join(uploadDir, file));
+        console.log(`Deleted: ${file}`);
       }
     });
     console.log('Cleaned up test-package files');

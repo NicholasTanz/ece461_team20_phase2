@@ -8,13 +8,36 @@ import { fetchNpmPackageVersions } from './versionChecker';
 
 const router = Router();
 
+//for debugging
+// NATO Phonetic Alphabet
+const NATO_ALPHABET = [
+  'Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot',
+  'Golf', 'Hotel', 'India', 'Juliett', 'Kilo', 'Lima',
+  'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo',
+  'Sierra', 'Tango', 'Uniform', 'Victor', 'Whiskey',
+  'X-ray', 'Yankee', 'Zulu'
+];
+
+// // Configure multer for file uploads
+// const storage: StorageEngine = multer.diskStorage({
+//   destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+//     cb(null, 'uploads/');  // Save files to 'uploads' directory
+//   },
+//   filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+//     cb(null, Date.now() + '-' + file.originalname);  // Generate unique file name
+//   }
+// });
+// const upload = multer({ storage });
+
 // Configure multer for file uploads
 const storage: StorageEngine = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
-    cb(null, 'uploads/');  // Save files to 'uploads' directory
+    cb(null, 'uploads/');
   },
   filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
-    cb(null, Date.now() + '-' + file.originalname);  // Generate unique file name
+    const randomWord = NATO_ALPHABET[Math.floor(Math.random() * NATO_ALPHABET.length)];
+    const newFileName = `${randomWord}-test-package${path.extname(file.originalname)}`;
+    cb(null, newFileName);
   }
 });
 const upload = multer({ storage });
@@ -47,10 +70,6 @@ const uploadHandler = (req: Request, res: Response): void => {
     logger.info(`Package ${packageName} uploaded.`);
   }
 
-  // Save the new package and encode it in base64
-  fs.renameSync(file.path, uploadPath);
-  const fileContent = fs.readFileSync(uploadPath).toString('base64');
-
   // Return the response in the specified format
   res.status(201).json({
     metadata: {
@@ -58,17 +77,15 @@ const uploadHandler = (req: Request, res: Response): void => {
       Version: packageVersion,
       ID: packageId
     },
-    data: {
-      Content: fileContent,
-      JSProgram: '' // Placeholder for JS Program field if required
-    }
+    //data: {
+      //Content: fileContent,
+      //JSProgram: '' // Placeholder for JS Program field if required
+    //}
   });
 };
 
-
 // Attach the uploadHandler to the route
 router.post('/upload', upload.single('package'), uploadHandler);
-
 
 // Download a package
 router.get('/download', async (req: Request, res: Response): Promise<void> => {
