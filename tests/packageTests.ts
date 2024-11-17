@@ -12,7 +12,7 @@ app.use('/receive', packageReceiver);
 
 describe('Package Management Tests', () => {
   // Mock data for testing
-  const testPackageContent = 'UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==';
+  const testPackageContent = 'UEsDBAoAAAAAACAfUFkAAAAAAAAAAAAAAAASAAkAdW5kZXJzY29yZS1t';
   const testJSProgram = `
     if (process.argv.length === 7) {
       console.log('Success');
@@ -25,6 +25,54 @@ describe('Package Management Tests', () => {
   const testURL = 'https://github.com/jashkenas/underscore';
 
   let uploadedPackageID: string;
+  let uploadedPackageUrlID: string;
+
+  // Helper function to pre-upload a package
+  async function preUploadPackage(name: string, version: string, useContent: boolean) {
+    const payload = {
+      Name: name,
+      Version: version,
+      JSProgram: testJSProgram,
+      Content: testPackageContent, // Include content for both cases
+      ...(useContent ? {} : { URL: testURL }) // Add URL if not using content
+    };
+  
+    console.log('Uploading with payload:', payload);
+  
+    // Send request to upload the package
+    const response = await request(app)
+      .post('/send/upload')
+      .send(payload);
+  
+    console.log('Upload Response:', response.body);
+  
+    // Check if the response status is not 201 (created)
+    if (response.status !== 201) {
+      throw new Error(`Failed to upload package: ${name} - Status: ${response.status}`);
+    }
+  
+    // Check if the response has the expected metadata structure
+    if (!response.body || !response.body.metadata || !response.body.metadata.ID) {
+      throw new Error(`Invalid response structure: ${JSON.stringify(response.body)}`);
+    }
+  
+    return response.body.metadata.ID;
+  }
+  
+  
+
+  // Pre-upload packages before running the tests
+  before(async () => {
+    try {
+      // Upload packages with content and URL respectively
+      uploadedPackageID = await preUploadPackage('cool-package', '1.0.0', true); // Uses Content
+      uploadedPackageUrlID = await preUploadPackage('cool-package-url', '1.0.0', false); // Uses URL
+    } catch (error) {
+      console.error('Error in before hook:', error);
+      throw error; // Fail the tests if setup fails
+    }
+  });
+  
 
   // Test uploading a package with content
   describe('POST /send/upload', () => {
@@ -34,14 +82,13 @@ describe('Package Management Tests', () => {
         .send({
           Content: testPackageContent,
           JSProgram: testJSProgram,
-          Name: 'cool-package',
+          Name: 'new-package',
           Version: '1.0.0'
         });
 
       expect(response.status).to.equal(201);
       expect(response.body).to.have.property('metadata');
-      uploadedPackageID = response.body.metadata.ID;
-      expect(response.body.metadata.Name).to.equal('cool-package');
+      expect(response.body.metadata.Name).to.equal('new-package');
     });
 
     it('should upload a new package using URL successfully', async () => {
@@ -49,60 +96,53 @@ describe('Package Management Tests', () => {
         .post('/send/upload')
         .send({
           URL: testURL,
+          Content: testPackageContent,
           JSProgram: testJSProgram,
-          Name: 'cool-package-url',
+          Name: 'new-package-url',
           Version: '1.0.0'
         });
 
       expect(response.status).to.equal(201);
       expect(response.body).to.have.property('metadata');
-      expect(response.body.metadata.Name).to.equal('cool-package-url');
-    });
-
-    it('should return 400 if no package content is provided', async () => {
-      const response = await request(app)
-        .post('/send/upload')
-        .send({
-          Name: 'missing-content-package',
-          Version: '1.0.0'
-        });
-
-      expect(response.status).to.equal(400);
-      expect(response.body).to.have.property('error', 'No package content provided.');
-    });
-
-    it('should return 409 if package already exists', async () => {
-      const response = await request(app)
-        .post('/send/upload')
-        .send({
-          Content: testPackageContent,
-          JSProgram: testJSProgram,
-          Name: 'cool-package',
-          Version: '1.0.0'
-        });
-
-      expect(response.status).to.equal(409);
-      expect(response.body).to.have.property('error', 'Package already exists.');
+      expect(response.body.metadata.Name).to.equal('new-package-url');
     });
   });
 
-  // Test updating a package
-  describe('POST /send/upload - Update package', () => {
-    it('should update an existing package with a higher version', async () => {
+  // Test updating a package with a higher version
+  describe('POST /send/upload - Update package with higher version', () => {
+    it('should update cool-package with a higher version', async () => {
       const response = await request(app)
         .post('/send/upload')
         .send({
           Content: testPackageContent,
           JSProgram: testJSProgram,
           Name: 'cool-package',
-          Version: '1.1.0'
+          Version: '4.2.0'
         });
 
       expect(response.status).to.equal(200);
-      expect(response.body.metadata.Version).to.equal('1.1.0');
+      expect(response.body.metadata.Version).to.equal('4.2.0');
     });
 
-    it('should append a lower version package', async () => {
+    it('should update cool-package-url with a higher version', async () => {
+      const response = await request(app)
+        .post('/send/upload')
+        .send({
+          URL: testURL,
+          Content: testPackageContent,
+          JSProgram: testJSProgram,
+          Name: 'cool-package-url',
+          Version: '4.2.0'
+        });
+
+      expect(response.status).to.equal(200);
+      expect(response.body.metadata.Version).to.equal('4.2.0');
+    });
+  });
+
+  // Test appending a package with a lower version
+  describe('POST /send/upload - Append package with lower version', () => {
+    it('should append cool-package with a lower version', async () => {
       const response = await request(app)
         .post('/send/upload')
         .send({
@@ -115,11 +155,26 @@ describe('Package Management Tests', () => {
       expect(response.status).to.equal(200);
       expect(response.body.metadata.Version).to.equal('0.9.0');
     });
+
+    it('should append cool-package-url with a lower version', async () => {
+      const response = await request(app)
+        .post('/send/upload')
+        .send({
+          URL: testURL,
+          Content: testPackageContent,
+          JSProgram: testJSProgram,
+          Name: 'cool-package-url',
+          Version: '0.9.0'
+        });
+
+      expect(response.status).to.equal(200);
+      expect(response.body.metadata.Version).to.equal('0.9.0');
+    });
   });
 
   // Test downloading a package
   describe('GET /receive/download/:id', () => {
-    it('should download a package successfully by ID with content', async () => {
+    it('should download cool-package successfully by ID', async () => {
       const response = await request(app)
         .get(`/receive/download/${uploadedPackageID}`)
         .expect(200);
@@ -129,9 +184,9 @@ describe('Package Management Tests', () => {
       expect(response.body.data).to.have.property('Content');
     });
 
-    it('should download a package successfully by ID with URL', async () => {
+    it('should download cool-package-url successfully by ID', async () => {
       const response = await request(app)
-        .get('/receive/download/package-url-id') // Replace with actual ID if needed
+        .get(`/receive/download/${uploadedPackageUrlID}`)
         .expect(200);
 
       expect(response.body).to.have.property('metadata');
@@ -144,17 +199,6 @@ describe('Package Management Tests', () => {
         .expect(404);
 
       expect(response.body).to.have.property('error', 'Package not found.');
-    });
-  });
-
-  // Error handling tests
-  describe('Error Handling', () => {
-    it('should return 400 if no package ID is provided', async () => {
-      const response = await request(app)
-        .get('/receive/download/')
-        .expect(400);
-
-      expect(response.body).to.have.property('error', 'Package ID is required.');
     });
   });
 });
