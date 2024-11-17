@@ -11,7 +11,6 @@ app.use('/send', packageSender);
 app.use('/receive', packageReceiver);
 
 describe('Package Management Tests', () => {
-  // Mock data for testing
   const testPackageContent = 'UEsDBAoAAAAAACAfUFkAAAAAAAAAAAAAAAASAAkAdW5kZXJzY29yZS1t';
   const testJSProgram = `
     if (process.argv.length === 7) {
@@ -24,172 +23,157 @@ describe('Package Management Tests', () => {
   `;
   const testURL = 'https://github.com/jashkenas/underscore';
 
-  let uploadedPackageID: string;
-  let uploadedPackageUrlID: string;
+  let uploadedContentPackageID: string;
+  let uploadedURLPackageID: string;
 
-  // Helper function to pre-upload a package
-  async function preUploadPackage(name: string, version: string, useContent: boolean) {
+  async function uploadNewPackage(name: string, method: 'Content' | 'URL') {
     const payload = {
       Name: name,
-      Version: version,
+      Version: '1.0.0',
       JSProgram: testJSProgram,
-      Content: testPackageContent, // Include content for both cases
-      ...(useContent ? {} : { URL: testURL }) // Add URL if not using content
+      Content: method === 'Content' ? testPackageContent : undefined,
+      URL: method === 'URL' ? testURL : undefined,
     };
-  
-    console.log('Uploading with payload:', payload);
-  
-    // Send request to upload the package
+
     const response = await request(app)
-      .post('/send/upload')
+      .post('/send/package')
       .send(payload);
-  
-    console.log('Upload Response:', response.body);
-  
-    // Check if the response status is not 201 (created)
+
     if (response.status !== 201) {
       throw new Error(`Failed to upload package: ${name} - Status: ${response.status}`);
     }
-  
-    // Check if the response has the expected metadata structure
-    if (!response.body || !response.body.metadata || !response.body.metadata.ID) {
-      throw new Error(`Invalid response structure: ${JSON.stringify(response.body)}`);
-    }
-  
+
     return response.body.metadata.ID;
   }
-  
-  
 
-  // Pre-upload packages before running the tests
   before(async () => {
     try {
-      // Upload packages with content and URL respectively
-      uploadedPackageID = await preUploadPackage('cool-package', '1.0.0', true); // Uses Content
-      uploadedPackageUrlID = await preUploadPackage('cool-package-url', '1.0.0', false); // Uses URL
+      uploadedContentPackageID = await uploadNewPackage('cool-package-content', 'Content');
+      uploadedURLPackageID = await uploadNewPackage('cool-package-url', 'URL');
     } catch (error) {
       console.error('Error in before hook:', error);
-      throw error; // Fail the tests if setup fails
+      throw error;
     }
   });
-  
 
-  // Test uploading a package with content
-  describe('POST /send/upload', () => {
-    it('should upload a new package with content successfully', async () => {
+  describe('POST /send/package - Upload New Packages', () => {
+    it('should upload a new package via Content successfully', async () => {
       const response = await request(app)
-        .post('/send/upload')
+        .post('/send/package')
         .send({
-          Content: testPackageContent,
+          Name: 'test-package-content',
+          Version: '1.0.0',
           JSProgram: testJSProgram,
-          Name: 'new-package',
-          Version: '1.0.0'
+          Content: testPackageContent,
         });
 
       expect(response.status).to.equal(201);
-      expect(response.body).to.have.property('metadata');
-      expect(response.body.metadata.Name).to.equal('new-package');
+      expect(response.body.metadata.Name).to.equal('test-package-content');
+      expect(response.body.metadata.Version).to.equal('1.0.0');
     });
 
-    it('should upload a new package using URL successfully', async () => {
+    it('should upload a new package via URL successfully', async () => {
       const response = await request(app)
-        .post('/send/upload')
+        .post('/send/package')
         .send({
-          URL: testURL,
-          Content: testPackageContent,
+          Name: 'test-package-url',
+          Version: '1.0.0',
           JSProgram: testJSProgram,
-          Name: 'new-package-url',
-          Version: '1.0.0'
+          URL: testURL,
         });
 
       expect(response.status).to.equal(201);
-      expect(response.body).to.have.property('metadata');
-      expect(response.body.metadata.Name).to.equal('new-package-url');
+      expect(response.body.metadata.Name).to.equal('test-package-url');
+      expect(response.body.metadata.Version).to.equal('1.0.0');
     });
   });
 
-  // Test updating a package with a higher version
-  describe('POST /send/upload - Update package with higher version', () => {
-    it('should update cool-package with a higher version', async () => {
+  describe('POST /send/package/:id - Update Existing Packages', () => {
+    it('should update a Content-based package with a higher version', async () => {
       const response = await request(app)
-        .post('/send/upload')
+        .post(`/send/package/${uploadedContentPackageID}`)
         .send({
+          Name: 'cool-package-content',
+          Version: '2.0.0',
           Content: testPackageContent,
           JSProgram: testJSProgram,
-          Name: 'cool-package',
-          Version: '4.2.0'
         });
 
-      expect(response.status).to.equal(200);
-      expect(response.body.metadata.Version).to.equal('4.2.0');
+      expect(response.status).to.equal(201);
+      expect(response.body.metadata.Version).to.equal('2.0.0');
     });
 
-    it('should update cool-package-url with a higher version', async () => {
+    it('should not update Content-based package with an older patch version', async () => {
       const response = await request(app)
-        .post('/send/upload')
+        .post(`/send/package/${uploadedContentPackageID}`)
         .send({
-          URL: testURL,
+          Name: 'cool-package-content',
+          Version: '1.0.1',
           Content: testPackageContent,
           JSProgram: testJSProgram,
+        });
+
+      expect(response.status).to.equal(400);
+      expect(response.body.error).to.include('Older Patch version not allowed');
+    });
+
+    it('should update a URL-based package with a lower patch version', async () => {
+      const response = await request(app)
+        .post(`/send/package/${uploadedURLPackageID}`)
+        .send({
           Name: 'cool-package-url',
-          Version: '4.2.0'
-        });
-
-      expect(response.status).to.equal(200);
-      expect(response.body.metadata.Version).to.equal('4.2.0');
-    });
-  });
-
-  // Test appending a package with a lower version
-  describe('POST /send/upload - Append package with lower version', () => {
-    it('should append cool-package with a lower version', async () => {
-      const response = await request(app)
-        .post('/send/upload')
-        .send({
-          Content: testPackageContent,
+          Version: '0.9.0',
+          URL: testURL,
           JSProgram: testJSProgram,
-          Name: 'cool-package',
-          Version: '0.9.0'
         });
 
-      expect(response.status).to.equal(200);
+      expect(response.status).to.equal(201);
       expect(response.body.metadata.Version).to.equal('0.9.0');
     });
 
-    it('should append cool-package-url with a lower version', async () => {
+    it('should not allow updating Content-based package with a URL', async () => {
       const response = await request(app)
-        .post('/send/upload')
+        .post(`/send/package/${uploadedContentPackageID}`)
         .send({
+          Name: 'cool-package-content',
+          Version: '2.1.0',
           URL: testURL,
-          Content: testPackageContent,
-          JSProgram: testJSProgram,
-          Name: 'cool-package-url',
-          Version: '0.9.0'
         });
 
-      expect(response.status).to.equal(200);
-      expect(response.body.metadata.Version).to.equal('0.9.0');
+      expect(response.status).to.equal(400);
+      expect(response.body.error).to.include('Inconsistent update method');
+    });
+
+    it('should not allow updating URL-based package with Content', async () => {
+      const response = await request(app)
+        .post(`/send/package/${uploadedURLPackageID}`)
+        .send({
+          Name: 'cool-package-url',
+          Version: '2.1.0',
+          Content: testPackageContent,
+        });
+
+      expect(response.status).to.equal(400);
+      expect(response.body.error).to.include('Inconsistent update method');
     });
   });
 
-  // Test downloading a package
   describe('GET /receive/download/:id', () => {
-    it('should download cool-package successfully by ID', async () => {
+    it('should download a Content-based package by ID', async () => {
       const response = await request(app)
-        .get(`/receive/download/${uploadedPackageID}`)
+        .get(`/receive/download/${uploadedContentPackageID}`)
         .expect(200);
 
-      expect(response.body).to.have.property('metadata');
-      expect(response.body.metadata.Name).to.equal('cool-package');
+      expect(response.body.metadata.Name).to.equal('cool-package-content');
       expect(response.body.data).to.have.property('Content');
     });
 
-    it('should download cool-package-url successfully by ID', async () => {
+    it('should download a URL-based package by ID', async () => {
       const response = await request(app)
-        .get(`/receive/download/${uploadedPackageUrlID}`)
+        .get(`/receive/download/${uploadedURLPackageID}`)
         .expect(200);
 
-      expect(response.body).to.have.property('metadata');
+      expect(response.body.metadata.Name).to.equal('cool-package-url');
       expect(response.body.data).to.have.property('URL');
     });
 
@@ -198,7 +182,7 @@ describe('Package Management Tests', () => {
         .get('/receive/download/nonexistent-id')
         .expect(404);
 
-      expect(response.body).to.have.property('error', 'Package not found.');
+      expect(response.body.error).to.equal('Package not found.');
     });
   });
 });
