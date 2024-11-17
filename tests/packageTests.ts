@@ -48,8 +48,8 @@ describe('Package Management Tests', () => {
 
   before(async () => {
     try {
-      uploadedContentPackageID = await uploadNewPackage('cool-package-content', 'Content');
-      uploadedURLPackageID = await uploadNewPackage('cool-package-url', 'URL');
+      uploadedContentPackageID = await uploadNewPackage('test-cool-package-content', 'Content');
+      uploadedURLPackageID = await uploadNewPackage('test-cool-package-url', 'URL');
     } catch (error) {
       console.error('Error in before hook:', error);
       throw error;
@@ -77,14 +77,14 @@ describe('Package Management Tests', () => {
         .post('/send/package')
         .send({
           Name: 'test-package-url',
-          Version: '1.0.0',
+          Version: '3.0.0',
           JSProgram: testJSProgram,
           URL: testURL,
         });
 
       expect(response.status).to.equal(201);
       expect(response.body.metadata.Name).to.equal('test-package-url');
-      expect(response.body.metadata.Version).to.equal('1.0.0');
+      expect(response.body.metadata.Version).to.equal('3.0.0');
     });
   });
 
@@ -93,7 +93,7 @@ describe('Package Management Tests', () => {
       const response = await request(app)
         .post(`/send/package/${uploadedContentPackageID}`)
         .send({
-          Name: 'cool-package-content',
+          Name: 'test-cool-package-content',
           Version: '2.0.0',
           Content: testPackageContent,
           JSProgram: testJSProgram,
@@ -107,7 +107,7 @@ describe('Package Management Tests', () => {
       const response = await request(app)
         .post(`/send/package/${uploadedContentPackageID}`)
         .send({
-          Name: 'cool-package-content',
+          Name: 'test-cool-package-content',
           Version: '1.0.1',
           Content: testPackageContent,
           JSProgram: testJSProgram,
@@ -121,7 +121,7 @@ describe('Package Management Tests', () => {
       const response = await request(app)
         .post(`/send/package/${uploadedURLPackageID}`)
         .send({
-          Name: 'cool-package-url',
+          Name: 'test-cool-package-url',
           Version: '0.9.0',
           URL: testURL,
           JSProgram: testJSProgram,
@@ -135,7 +135,7 @@ describe('Package Management Tests', () => {
       const response = await request(app)
         .post(`/send/package/${uploadedContentPackageID}`)
         .send({
-          Name: 'cool-package-content',
+          Name: 'test-cool-package-content',
           Version: '2.1.0',
           URL: testURL,
         });
@@ -148,7 +148,7 @@ describe('Package Management Tests', () => {
       const response = await request(app)
         .post(`/send/package/${uploadedURLPackageID}`)
         .send({
-          Name: 'cool-package-url',
+          Name: 'test-cool-package-url',
           Version: '2.1.0',
           Content: testPackageContent,
         });
@@ -164,7 +164,7 @@ describe('Package Management Tests', () => {
         .get(`/receive/download/${uploadedContentPackageID}`)
         .expect(200);
 
-      expect(response.body.metadata.Name).to.equal('cool-package-content');
+      expect(response.body.metadata.Name).to.equal('test-cool-package-content');
       expect(response.body.data).to.have.property('Content');
     });
 
@@ -173,7 +173,7 @@ describe('Package Management Tests', () => {
         .get(`/receive/download/${uploadedURLPackageID}`)
         .expect(200);
 
-      expect(response.body.metadata.Name).to.equal('cool-package-url');
+      expect(response.body.metadata.Name).to.equal('test-cool-package-url');
       expect(response.body.data).to.have.property('URL');
     });
 
