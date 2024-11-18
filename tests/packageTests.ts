@@ -26,6 +26,7 @@ describe('Package Management Tests', () => {
   let uploadedContentPackageID: string;
   let uploadedURLPackageID: string;
 
+  // Helper function to upload a new package
   async function uploadNewPackage(name: string, method: 'Content' | 'URL') {
     const payload = {
       Name: name,
@@ -46,29 +47,19 @@ describe('Package Management Tests', () => {
     return response.body.metadata.ID;
   }
 
-  before(async () => {
-    try {
-      uploadedContentPackageID = await uploadNewPackage('test-cool-package-content', 'Content');
-      uploadedURLPackageID = await uploadNewPackage('test-cool-package-url', 'URL');
-    } catch (error) {
-      console.error('Error in before hook:', error);
-      throw error;
-    }
-  });
-
   describe('POST /send/package - Upload New Packages', () => {
     it('should upload a new package via Content successfully', async () => {
       const response = await request(app)
         .post('/send/package')
         .send({
-          Name: 'test-package-content',
+          Name: 'test-package-upload-content',
           Version: '1.0.0',
           JSProgram: testJSProgram,
           Content: testPackageContent,
         });
 
       expect(response.status).to.equal(201);
-      expect(response.body.metadata.Name).to.equal('test-package-content');
+      expect(response.body.metadata.Name).to.equal('test-package-upload-content');
       expect(response.body.metadata.Version).to.equal('1.0.0');
     });
 
@@ -76,19 +67,30 @@ describe('Package Management Tests', () => {
       const response = await request(app)
         .post('/send/package')
         .send({
-          Name: 'test-package-url',
+          Name: 'test-package-upload-url',
           Version: '3.0.0',
           JSProgram: testJSProgram,
           URL: testURL,
         });
-
+    
       expect(response.status).to.equal(201);
-      expect(response.body.metadata.Name).to.equal('test-package-url');
+      expect(response.body.metadata.Name).to.equal('test-package-upload-url');
       expect(response.body.metadata.Version).to.equal('3.0.0');
     });
   });
 
   describe('POST /send/package/:id - Update Existing Packages', () => {
+    // Pre-upload packages before running the update tests
+    before(async () => {
+      try {
+        uploadedContentPackageID = await uploadNewPackage('test-cool-package-content', 'Content');
+        uploadedURLPackageID = await uploadNewPackage('test-cool-package-url', 'URL');
+      } catch (error) {
+        console.error('Error in before hook:', error);
+        throw error;
+      }
+    });
+
     it('should update a Content-based package with a higher version', async () => {
       const response = await request(app)
         .post(`/send/package/${uploadedContentPackageID}`)
