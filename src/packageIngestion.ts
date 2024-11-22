@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import axios from 'axios'; // For fetching files from URLs
 import logger from './logger';
-import metrics from './metrics';
+//import metrics from './metrics';
 
 const router = Router();
 
@@ -17,7 +17,7 @@ async function processUrl(packageUrl: string): Promise<{ NetScore: number }> {
 
     // Simulate metric calculation for the package
     // Replace this with actual logic for fetching and calculating metrics
-    const metrics = await metrics.calculateMetrics(packageUrl);
+    //const metrics = await metrics.calculateMetrics(packageUrl);
     const simulatedMetrics = { NetScore: Math.random() }; // Example: Random NetScore for demonstration
     logger.info(`Calculated metrics for ${packageUrl}: ${JSON.stringify(simulatedMetrics)}`);
 
