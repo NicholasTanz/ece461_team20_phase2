@@ -3,7 +3,7 @@ import packageSender from './packageSender';
 import packageReceiver from './packageReceiver';
 import packageSearcher from './packageSearcher';
 import packageDeleter from './packageDeleter';
-import requestPackageIngestion from './packageIngestion';
+import packageIngestion from './packageIngestion';
 const app = express();
 app.use(express.json());
 
