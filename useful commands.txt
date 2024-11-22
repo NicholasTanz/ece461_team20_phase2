@@ -1,0 +1,44 @@
+npx ts-node src/tests/CURLtests.ts - for testing curl endpoints
+
+Invoke-WebRequest -Uri "http://localhost:3000/cleanup" -Method DELETE - for cleaning curl test files
+
+
+
+npx tsc --build -build files
+
+npx ts-node src/run.ts -start server
+
+uploading via content:
+
+Invoke-WebRequest -Uri "http://localhost:3000/sender/package/" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body @'
+{
+  "Name": "test-package-content",
+  "Version": "1.1.0",
+  "Content": "UEsDBAoAAAAAACAfUFkAAAAAAAAAAAAAAAASAAkAdW5kZXJzY29yZS1t",
+  "JSProgram": "if (process.argv.length === 7) { console.log(\"Success\"); process.exit(0); } else { console.log(\"Failed\"); process.exit(1); }"
+}
+'@
+
+uploading via url:
+
+Invoke-WebRequest -Uri "http://localhost:3000/sender/package" `
+-Method POST `
+-ContentType "application/json" `
+-Body '{
+  "Name": "test-package-url",
+  "Version": "1.0.0",
+  "URL": "https://github.com/jashkenas/underscore",
+  "JSProgram": "if (process.argv.length === 7) { console.log(\"Success\"); process.exit(0); } else { console.log(\"Failed\"); process.exit(1); }"
+}'
+
+
+downloading:
+
+Invoke-WebRequest -Uri "http://localhost:3000/receiver/download/test-package-content-ver-1-1-0" `
+  -OutFile "downloads\test-package-content-1.0.0.zip"
+
+
+always build and then run server before testing changes
