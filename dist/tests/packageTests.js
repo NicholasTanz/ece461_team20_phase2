@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const supertest_1 = __importDefault(require("supertest"));
 const chai_1 = require("chai");
 const express_1 = __importDefault(require("express"));
-const packageSender_1 = __importDefault(require("../packageSender"));
-const packageReceiver_1 = __importDefault(require("../packageReceiver"));
+const packageSender_1 = __importDefault(require("../src/packageSender"));
+const packageReceiver_1 = __importDefault(require("../src/packageReceiver"));
 // Set up Express app for testing
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
