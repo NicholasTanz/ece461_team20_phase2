@@ -39,5 +39,5 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name ingestPackageFunction \
-            --zip-file fileb://../uploads/1732318481261-test-update-content-1.1.0.zip
+            --zip-file fileb://src/uploads/1732318481261-test-update-content-1.1.0
 
