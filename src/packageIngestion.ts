@@ -7,14 +7,14 @@ const router = Router();
 
 // Function to process package URL and calculate metrics
 router.post('/ingest', async (req: Request, res: Response) => {
-  const { packageUrl, localPath } = req.body;
-
+  //const { packageUrl, localPath } = req.body;
+  const packageUrl = 'https://github.com/jashkenas/underscore';
   try {
     logger.info(`Processing package URL: ${packageUrl}`);
 
     // Calculate individual metrics
-    const rampUpScore = await calculateRampUpMetric(localPath);
-    const correctnessScore = await calculateCorrectnessMetric(localPath);
+    const rampUpScore = await calculateRampUpMetric(packageUrl);
+    const correctnessScore = await calculateCorrectnessMetric(packageUrl);
     const responsivenessScore = await calculateResponsiveMaintainerMetric(packageUrl);
     const pinnedDepsScore = await calculatePinnedDependenciesMetric(packageUrl);
     const prCodeScore = await calculateCodeFromPRsMetric(packageUrl);

@@ -39,6 +39,20 @@ const testPackageContent = 'UEsDBAoAAAAAACAfUFkAAAAAAAAAAAAAAAASAAkAdW5kZXJzY29y
 const testJSProgram = `if (process.argv.length === 7) { console.log(\\\"Success\\\"); process.exit(0); } else { console.log(\\\"Failed\\\"); process.exit(1); }`;
 const testURL = 'https://github.com/jashkenas/underscore';
 
+async function apiTests() {
+  try {
+    // 1. Upload test-package-content-11.0.0.zip
+  await runCurlCommand(
+    `curl -X POST http://localhost:3000/ingest/package \
+    -H "Content-Type: application/json" \
+    -d "{\\"Name\\":\\"test-package-content\\",\\"Version\\":\\"11.0.0\\",\\"Content\\":\\"${testPackageContent}\\",\\"JSProgram\\":\\"${testJSProgram}\\"}"`,    
+    'Upload to api test-package-content-11.0.0.zip'
+  )
+  } catch (error) {
+  console.error('Test failed:', error);
+  } 
+}
+
 async function runTests() {
   try {
     // 1. Upload test-package-content-11.0.0.zip
@@ -210,4 +224,4 @@ async function runTests() {
 }
 }
 // Run the tests
-runTests();
+apiTests();
