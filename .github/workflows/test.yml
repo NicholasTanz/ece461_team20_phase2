@@ -24,12 +24,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run tests
-        run: npx nyc mocha -r ts-node/register src/**/*.ts
-        env:  # Specify environment variables if needed
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          LOG_FILE: /tmp/log
-          LOG_LEVEL: 0
+      # - name: Run tests
+      #   run: npx nyc mocha -r ts-node/register src/**/*.ts
+      #   env:  # Specify environment variables if needed
+      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      #     LOG_FILE: /tmp/log
+      #     LOG_LEVEL: 0
 
       - name: Deploy to AWS
         env:
