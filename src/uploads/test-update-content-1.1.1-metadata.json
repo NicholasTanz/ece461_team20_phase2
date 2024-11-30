@@ -1,0 +1,7 @@
+{
+  "Name": "test-update-content",
+  "Version": "1.1.1",
+  "ID": "test-update-content-ver-1-1-1",
+  "Method": "Content",
+  "JSProgram": "if (process.argv.length === 7) { console.log(\\\"Success\\\")"
+}

@@ -10,14 +10,6 @@ const uploadsDir = path.join(__dirname, 'uploads');
 // DELETE /package/:id
 router.delete('/package/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const authToken = req.headers['x-authorization'];
-
-//   // Validate Authorization
-//   const validTokens = ['your-valid-token']; // Replace with actual token validation logic
-//   if (!authToken || !validTokens.includes(authToken as string)) {
-//     res.status(403).send('Authentication failed due to invalid or missing AuthenticationToken.');
-//     return;
-//   }
 
   // Validate Package ID
   if (!id) {
