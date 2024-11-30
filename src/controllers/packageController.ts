@@ -8,20 +8,15 @@ export const getPackages = (req: Request, res: Response) => {
 
 export async function getPackageRating(req: Request, res: Response): Promise<void> {
     const { id } = req.params; // Get the package ID from the path
-    const authToken = req.header('X-Authorization'); // Get the auth token from the header
   
     // Check for missing fields
     if (!id) {
         res.status(400).json({ error: 'Missing field(s) in the PackageID' });
         return
     }
-    if (!authToken) {
-      res.status(403).json({ error: 'Authentication failed due to invalid or missing AuthenticationToken.' });
-      return
-    }
   
     try {
-      // Validate the package ID and authorization token here...
+      // Validate the package ID here 
 
       // change later. 
       const packageUrlFromId: string[] = ['https://github.com/mrdoob/three.js/'];

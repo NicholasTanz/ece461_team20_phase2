@@ -7,12 +7,6 @@ const router = Router();
 const uploadsDir = path.join(__dirname, 'uploads');
 const PAGE_LIMIT = 10; // Limit per page
 
-// // Helper function to validate authorization token
-// function validateAuthToken(authToken: string | string[]): boolean {
-//   const validTokens = ['your-valid-token']; // Replace with actual token validation logic
-//   return typeof authToken === 'string' && validTokens.includes(authToken);
-// }
-
 // Helper function to parse metadata
 function parseMetadata(filePath: string) {
     const content = fs.readFileSync(filePath, 'utf-8');
@@ -22,16 +16,7 @@ function parseMetadata(filePath: string) {
 // POST /packages
 router.post('/packages', (req: Request, res: Response) => {
     const queries = req.body;
-    const authToken = req.headers['x-authorization'];
     const offset = parseInt(req.query.offset as string) || 0;
-  
-    // // Validate Authorization
-    // if (!authToken || !validateAuthToken(authToken)) {
-    //   res.status(403).json({
-    //     error: 'Authentication failed due to invalid or missing AuthenticationToken.',
-    //   });
-    //   return;
-    // }
   
     // Validate input
     if (!Array.isArray(queries) || queries.some((query) => typeof query.Name !== 'string')) {
@@ -99,15 +84,6 @@ router.post('/packages', (req: Request, res: Response) => {
 // POST /package/byRegEx
 router.post('/package/byRegEx', async (req: Request, res: Response): Promise<void> => {
   const { RegEx } = req.body;
-  const authToken = req.headers['x-authorization'];
-
-//   // Validate Authorization
-//   if (!authToken || !validateAuthToken(authToken)) {
-//     res.status(403).send({
-//       error: 'Authentication failed due to invalid or missing AuthenticationToken.',
-//     });
-//     return;
-//   }
 
   // Validate input
   if (!RegEx) {
