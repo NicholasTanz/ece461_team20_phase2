@@ -1,0 +1,6 @@
+1.) npm init vite@latest
+    * select vue and typescript variant. 
+
+2.) npm run install
+
+3.) npm run dev
