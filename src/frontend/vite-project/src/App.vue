@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <h1>Hello World</h1>
+    <h1>Welcome to the Team's Package Manager</h1>
   </div>
 </template>
 
@@ -13,7 +13,5 @@ export default {
 <style>
 #app {
   font-family: Arial, sans-serif;
-  text-align: center;
-  margin-top: 50px;
 }
 </style>
