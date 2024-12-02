@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const uploadsDir = path.join(__dirname, '../uploads');
-const remotetestDir = path.join(__dirname, '../../remotetest');
+const remotetestDir = path.join(__dirname, '../../contentfiles');
 const testFilePath = path.join(remotetestDir, 'test-package-content-11.0.0.zip');
 
 if (!fs.existsSync(uploadsDir)) {
