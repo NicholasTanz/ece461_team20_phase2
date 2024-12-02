@@ -1,7 +1,9 @@
-import { calculateRampUpMetric, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric, calculatePinnedDependenciesMetric, calculateCodeFromPRsMetric } from './metrics';
+import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric, calculatePinnedDependenciesMetric, calculateCodeFromPRsMetric } from './metrics';
 import { Router, Request, Response } from 'express';
 import logger from './logger';
 import axios from 'axios';
+import * as path from 'path';
+import * as fs from 'fs';
 
 const router = Router();
 
@@ -9,19 +11,37 @@ const router = Router();
 router.post('/ingest', async (req: Request, res: Response) => {
   //const { packageUrl, localPath } = req.body;
   const packageUrl = 'https://github.com/jashkenas/underscore';
+
   try {
     logger.info(`Processing package URL: ${packageUrl}`);
 
     // Calculate individual metrics
-    const rampUpScore = await calculateRampUpMetric(packageUrl);
+    // Clone the GitHub repository locally
+    const repoName = packageUrl.replace('https://github.com/', '').replace('/', '_');
+    const localPath = path.join(__dirname, '..', 'repos', repoName);
+
+    // assert repo directory exists. 
+    if (!fs.existsSync(localPath)) {
+      fs.mkdirSync(path.join(__dirname, '..', 'repos'), { recursive: true });
+    }
+    
+    try {
+      await cloneRepo(packageUrl, localPath);
+    } catch (error) {
+      logger.debug("Failed to clone GitHub repository: " + repoName);
+  }
+
+    // Calculate individual metrics
+    const rampUpScore = await calculateRampUpMetric(localPath);
     const correctnessScore = await calculateCorrectnessMetric(packageUrl);
     const responsivenessScore = await calculateResponsiveMaintainerMetric(packageUrl);
     const pinnedDepsScore = await calculatePinnedDependenciesMetric(packageUrl);
     const prCodeScore = await calculateCodeFromPRsMetric(packageUrl);
+    const licenseScore = await checkLicenseCompatibility(packageUrl);
+    const busfactor = await getBusFactor(packageUrl);
 
     // Combine scores
-    const combinedScore = (rampUpScore + correctnessScore + responsivenessScore + pinnedDepsScore + prCodeScore) / 5;
-
+    const combinedScore = (.1 * rampUpScore + .1 * correctnessScore + .1 * responsivenessScore + .025 * pinnedDepsScore + .025 * prCodeScore + .4 * licenseScore.score + .25 * busfactor);
     logger.info(`Combined Score: ${combinedScore}`);
 
     // Check threshold and ingest

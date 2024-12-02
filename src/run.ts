@@ -83,13 +83,13 @@ export async function processUrl(url: string): Promise<any> {
   // otherwise, calculate netscore. 
   } else {
     const netScore = (
-      parseFloat(results.BusFactor) * 0.2 +
+      parseFloat(results.BusFactor) * 0.25 +
       parseFloat(results.RampUp) * 0.1 +
       parseFloat(results.Correctness) * 0.1 +
       parseFloat(results.ResponsiveMaintainer) * 0.1 +
-      parseFloat(results.License) * 0.3 +
-      parseFloat(results.GoodPinningPractice) * .1 +
-      parseFloat(results.PullRequest) * .1
+      parseFloat(results.License) * 0.4 +
+      parseFloat(results.GoodPinningPractice) * .025 +
+      parseFloat(results.PullRequest) * .025
     );
     results.NetScore = netScore.toFixed(2);
   }
