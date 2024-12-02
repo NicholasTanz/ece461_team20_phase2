@@ -4,10 +4,23 @@ import PackageDetails from '../components/PackageDetails.vue';
 import DeletePackage from '../components/DeletePackage.vue';
 
 const routes = [
-  { path: '/', name: 'PackageList', component: PackageList },
-  { path: '/lookup/:id', name: 'PackageDetails', component: PackageDetails },
-  { path: '/delete/:id', name: 'DeletePackage', component: DeletePackage },
+  {
+    path: "/package/:id",
+    name: "PackageDetails",
+    component: PackageDetails, // Component for viewing package details
+  },
+  {
+    path: "/delete/:id",
+    name: "DeletePackage",
+    component: DeletePackage, // Component for deleting a package
+  },
+  {
+    path: "/upload",
+    name: "UploadPackage",
+    component: PackageList, // Component for uploading a package
+  },
 ];
+
 
 const router = createRouter({
   history: createWebHistory(),

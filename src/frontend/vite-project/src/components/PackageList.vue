@@ -12,16 +12,17 @@
   
   <script lang="ts">
   import { ref, onMounted } from 'vue';
-  import { fetchPackages } from '../api';
+//  import { fetchPackages } from '../api';
   
   export default {
     setup() {
       const packages = ref([]);
   
-      onMounted(async () => {
+/*      onMounted(async () => {
         packages.value = await fetchPackages();
       });
-  
+  */
+ 
       return { packages };
     },
   };

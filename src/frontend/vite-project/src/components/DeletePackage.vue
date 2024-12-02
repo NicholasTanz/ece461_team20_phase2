@@ -15,7 +15,7 @@
   <script lang="ts">
   import { ref, onMounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';  // For accessing the route params and navigating after deletion
-  import { fetchPackageById, deletePackage } from '../api';  // Import the API functions
+//  import { fetchPackageById, deletePackage } from '../api';  // Import the API functions
   
   export default {
     setup() {
@@ -24,7 +24,7 @@
       const packageData = ref(null);
   
       // Fetch the package details based on the ID in the route params
-      onMounted(async () => {
+   /*   onMounted(async () => {
         const id = route.params.id as string;
         packageData.value = await fetchPackageById(id);
       });
@@ -41,8 +41,10 @@
       const cancel = () => {
         router.push('/');
       };
-  
+  */
+ 
       return { packageData, deletePackage: deletePackageHandler, cancel };
+     
     },
   };
   </script>

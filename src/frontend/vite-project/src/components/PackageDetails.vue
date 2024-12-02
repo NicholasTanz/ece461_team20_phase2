@@ -16,19 +16,19 @@
   <script lang="ts">
   import { ref, onMounted } from 'vue';
   import { useRoute } from 'vue-router';  // For accessing the route params
-  import { fetchPackageById } from '../api';  // Import the API function
+//  import { fetchPackageById } from '../api';  // Import the API function
   
   export default {
     setup() {
       const route = useRoute();  // Access route params
       const packageData = ref(null);
   
-      // Fetch the package details based on the ID in the route params
+  /*    // Fetch the package details based on the ID in the route params
       onMounted(async () => {
         const id = route.params.id as string;
         packageData.value = await fetchPackageById(id);
       });
-  
+  */
       return { packageData };
     },
   };
