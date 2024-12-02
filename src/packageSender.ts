@@ -147,8 +147,8 @@ router.post('/package', upload.single('content'), async (req: Request, res: Resp
   }
 });
 
-// PUT /package/:id - Update an existing package
-router.put('/package/:id', upload.single('content'), async (req: Request, res: Response): Promise<void> => {
+// post /package/:id - Update an existing package
+router.post('/package/:id', upload.single('content'), async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const { Name, Version, JSProgram, Content, URL } = req.body;
   const file = req.file;
@@ -246,7 +246,7 @@ router.put('/package/:id', upload.single('content'), async (req: Request, res: R
     };
     savePackageMetadata(Name, Version, metadata);
 
-    res.status(201).send(
+    res.status(200).send(
       `metadata:
       Name: ${metadata.Name}
       Version: ${metadata.Version}
