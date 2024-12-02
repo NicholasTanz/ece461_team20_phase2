@@ -1,10 +1,10 @@
-import { Router } from 'express';
-import { getPackages, getPackageRating } from '../controllers/packageController';
+//import { Router } from 'express';
+//import { getPackages, getPackageRating } from '../controllers/packageController';
 
-const router = Router();
+//const router = Router();
 
 // Define your routes
-router.get('/packages', getPackages);
-router.get('/package/:id/rate', getPackageRating);
+//router.get('/packages', getPackages);
+//router.get('/package/:id/rate', getPackageRating);
 
-export default router;
+//export default router;

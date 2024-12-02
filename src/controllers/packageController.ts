@@ -1,3 +1,4 @@
+/*
 import { Request, Response } from 'express';
 import {processAllUrls} from '../run'
 
@@ -25,11 +26,9 @@ export async function getPackageRating(req: Request, res: Response): Promise<voi
       const packageRating = await processAllUrls(packageUrlFromId);
       
 
-      /* 
-
       if (!packageRating) {
         return res.status(404).json({ error: 'Package does not exist.' });
-      }*/
+      }
   
       // Return the package rating
       res.status(200).json(packageRating);
@@ -40,3 +39,4 @@ export async function getPackageRating(req: Request, res: Response): Promise<voi
       return
     }
   }
+  */
