@@ -7,7 +7,7 @@ file used to interact with the backend api and fetch data from the server.
 
 import axios from 'axios';
 
-const API_BASE = '/api';
+const API_BASE = '/localhost:3000'; // Change this to the actual API base URL
 
 export async function fetchPackages() {
   const response = await axios.get(`${API_BASE}/packages`);

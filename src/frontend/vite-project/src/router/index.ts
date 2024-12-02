@@ -34,7 +34,7 @@ const routes = [
     component: packageRater, // Component to handle /package:id/rate interaction (get)
   },
   {
-    path: "/package/:id/cost:",
+    path: "/package/:id/cost",
     name: "CostPackage",
     component: packageCost, // Component to handle /package:id/cost interaction (get)
   },
