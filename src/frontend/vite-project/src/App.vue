@@ -6,13 +6,17 @@
       <input
         type="text"
         v-model="packageName"
-        placeholder="Enter package name or ID"
+        placeholder="Enter package name or ID (if applicable)"
         class="input-box"
       />
       <div class="buttons">
-        <button @click="navigateTo('rating')">Get Rating of a Package</button>
+        <button @click="navigateTo('details')">View Package Details</button>
         <button @click="navigateTo('delete')">Delete a Package</button>
         <button @click="navigateTo('upload')">Upload a Package</button>
+        <button @click="navigateTo('rate')">Rate a Package</button>
+        <button @click="navigateTo('cost')">View Package Cost</button>
+        <button @click="navigateTo('regex')">Search by RegEx</button>
+        <button @click="navigateTo('reset')">Reset System</button>
       </div>
     </div>
 
@@ -31,13 +35,16 @@ export default defineComponent({
     const router = useRouter(); // Vue Router instance for navigation
 
     const navigateTo = (action: string) => {
-      if (action !== "upload" && !packageName.value) {
+      if (
+        ["details", "delete", "rate", "cost"].includes(action) &&
+        !packageName.value
+      ) {
         alert("Please enter a package name or ID.");
         return;
       }
 
       switch (action) {
-        case "rating":
+        case "details":
           router.push({ name: "PackageDetails", params: { id: packageName.value } });
           break;
         case "delete":
@@ -45,6 +52,18 @@ export default defineComponent({
           break;
         case "upload":
           router.push({ name: "UploadPackage" });
+          break;
+        case "rate":
+          router.push({ name: "RatePackage", params: { id: packageName.value } });
+          break;
+        case "cost":
+          router.push({ name: "CostPackage", params: { id: packageName.value } });
+          break;
+        case "regex":
+          router.push({ name: "RegExPackage" });
+          break;
+        case "reset":
+          router.push({ name: "Reset" });
           break;
         default:
           alert("Invalid action");
@@ -79,7 +98,7 @@ export default defineComponent({
 }
 
 button {
-  margin: 0 10px;
+  margin: 5px 10px;
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
