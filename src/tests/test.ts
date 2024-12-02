@@ -19,7 +19,7 @@ import { expect } from 'chai';
 import simpleGit from 'simple-git';
 import * as sinon from 'sinon';
 import axios from 'axios';
-import { getBusFactor, calculateRampUpMetric, cloneRepo, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric, calculateCodeFromPRsMetric, calculatePinnedDependenciesMetric} from './metrics';
+import { getBusFactor, calculateRampUpMetric, cloneRepo, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric, calculateCodeFromPRsMetric, calculatePinnedDependenciesMetric} from '../metrics';
 import * as os from 'os';
 
 
