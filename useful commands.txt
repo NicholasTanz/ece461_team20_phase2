@@ -1,15 +1,37 @@
-npx ts-node src/tests/CURLtests.ts - for testing curl endpoints
+**Useful Commands**
 
-Invoke-WebRequest -Uri "http://localhost:3000/cleanup" -Method DELETE - for cleaning curl test files
+---
 
+### **Testing CURL Endpoints**
+```bash
+npx ts-node src/tests/CURLtests.ts
+```
 
+---
 
-npx tsc --build -build files
+### **Cleaning CURL Test Files**
+```powershell
+Invoke-WebRequest -Uri "http://localhost:3000/cleanup" -Method DELETE
+```
 
-npx ts-node src/run.ts -start server
+---
 
-uploading via content:
+### **Building and Running the Server**
+1. **Build Files**
+   ```bash
+   npx tsc --build
+   ```
+2. **Start Server**
+   ```bash
+   npx ts-node src/run.ts
+   ```
 
+---
+
+### **Uploading Packages**
+
+#### **Via Content**
+```powershell
 Invoke-WebRequest -Uri "http://localhost:3000/sender/package/" `
     -Method POST `
     -ContentType "application/json" `
@@ -21,24 +43,30 @@ Invoke-WebRequest -Uri "http://localhost:3000/sender/package/" `
   "JSProgram": "if (process.argv.length === 7) { console.log(\"Success\"); process.exit(0); } else { console.log(\"Failed\"); process.exit(1); }"
 }
 '@
+```
 
-uploading via url:
-
+#### **Via URL**
+```powershell
 Invoke-WebRequest -Uri "http://localhost:3000/sender/package" `
--Method POST `
--ContentType "application/json" `
--Body '{
+    -Method POST `
+    -ContentType "application/json" `
+    -Body '{
   "Name": "test-package-url",
   "Version": "1.0.0",
   "URL": "https://github.com/jashkenas/underscore",
   "JSProgram": "if (process.argv.length === 7) { console.log(\"Success\"); process.exit(0); } else { console.log(\"Failed\"); process.exit(1); }"
 }'
+```
 
+---
 
-downloading:
-
+### **Downloading Packages**
+```powershell
 Invoke-WebRequest -Uri "http://localhost:3000/receiver/download/test-package-content-ver-1-1-0" `
   -OutFile "downloads\test-package-content-1.0.0.zip"
+```
 
+---
 
-always build and then run server before testing changes
+### **Notes**
+- **Always build the project and run the server before testing changes.**
