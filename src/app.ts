@@ -1,8 +1,6 @@
 // app.ts
 import express from 'express';
-import packageRoutes from './routes/packageRoutes';
 import packageManager from './packageManager';
-import logger from './logger';
 
 const app = express();
 
@@ -13,7 +11,6 @@ app.get('/health', (req, res) => {
 });
 
 // Register main routes
-app.use('/', packageRoutes);
 app.use('/', packageManager);
 
 export default app;
