@@ -29,13 +29,7 @@ const downloadsDir = path.join(__dirname, '../downloads');
 
 router.get('/package/:id/rate', async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
-  
-    const authToken = req.headers['x-authorization'];
-    if (!authToken || authToken !== 'your-valid-token') {
-      res.status(403).json({ error: 'Authentication failed due to invalid or missing AuthenticationToken.' });
-      return;
-    }
-  
+
     if (!id) {
       res.status(400).json({ error: 'There is missing field(s) in the PackageID.' });
       return;
