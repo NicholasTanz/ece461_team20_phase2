@@ -17,7 +17,6 @@ import axios from 'axios';
 import { exec } from 'child_process';
 import express from 'express';
 import app from './app';
-import packageRoutes from './routes/packageRoutes';
 // charlie's additions:
 import packageManager from './packageManager';
 import cleanupRoutes from './tests/cleanup';
@@ -83,13 +82,13 @@ export async function processUrl(url: string): Promise<any> {
   // otherwise, calculate netscore. 
   } else {
     const netScore = (
-      parseFloat(results.BusFactor) * 0.2 +
+      parseFloat(results.BusFactor) * 0.25 +
       parseFloat(results.RampUp) * 0.1 +
       parseFloat(results.Correctness) * 0.1 +
       parseFloat(results.ResponsiveMaintainer) * 0.1 +
-      parseFloat(results.License) * 0.3 +
-      parseFloat(results.GoodPinningPractice) * .1 +
-      parseFloat(results.PullRequest) * .1
+      parseFloat(results.License) * 0.4 +
+      parseFloat(results.GoodPinningPractice) * .025 +
+      parseFloat(results.PullRequest) * .025
     );
     results.NetScore = netScore.toFixed(2);
   }
@@ -258,7 +257,6 @@ function startServer() {
   });
 
   // Add your API routes here
-  app.use('/', packageRoutes);
   app.use('/cleanup', cleanupRoutes); //for cleaning
   app.use('/reset', resetState);
 

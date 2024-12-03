@@ -24,20 +24,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # - name: Run tests
-      #   run: npx nyc mocha -r ts-node/register src/**/*.ts
-      #   env:  # Specify environment variables if needed
-      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-      #     LOG_FILE: /tmp/log
-      #     LOG_LEVEL: 0
+      - name: Run tests
+        run:  npx nyc mocha -r ts-node/register 'src/**/*.ts'  --ignore 'src/tests/CURLtests.ts' --ignore 'src/tests/packageTests.ts'  --exit
+        env:  # Specify environment variables if needed
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          LOG_FILE: /tmp/log
+          LOG_LEVEL: 0
 
-      - name: Deploy to AWS
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY}}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET}}
-          AWS_REGION: ${{ secrets.AWS_REGION}}
-        run: |
-          aws lambda update-function-code \
-            --function-name ingestPackageFunction \
+      #- name: Deploy to AWS
+      #  env:
+      #    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_KEY}}
+      #    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET}}
+      #    AWS_REGION: ${{ secrets.AWS_REGION}}
+      #  run: |
+      #    aws lambda update-function-code \
+      #      --function-name ingestPackageFunction \
       #      --zip-file fileb://src/uploads/1732318481261-test-update-content-1.1.0.zip
 
