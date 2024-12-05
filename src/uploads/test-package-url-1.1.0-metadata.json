@@ -1,8 +1,0 @@
-{
-  "Name": "test-package-url",
-  "Version": "1.1.0",
-  "ID": "test-package-url-ver-1-1-0",
-  "Method": "URL",
-  "JSProgram": "if (process.argv.length === 7) { console.log(\"Success\"); process.exit(0); } else { console.log(\"Failed\"); process.exit(1); }",
-  "URL": "https://github.com/jashkenas/underscore"
-}

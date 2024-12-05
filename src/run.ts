@@ -248,7 +248,7 @@ export async function processAllUrls(urls: string[]) {
 // Set up express server
 function startServer() {
   const app = express();
-  const port = 3000; // change later. 
+  const port = 9999; // change later. 
 
   app.use(express.json());
 
