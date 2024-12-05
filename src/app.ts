@@ -1,7 +1,7 @@
 // app.ts
 import express from 'express';
 import packageManager from './packageManager';
-
+/*
 const app = express();
 
 app.use(express.json());
@@ -14,3 +14,4 @@ app.get('/health', (req, res) => {
 app.use('/', packageManager);
 
 export default app;
+*/
