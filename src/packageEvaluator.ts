@@ -82,4 +82,5 @@ router.get('/package/:id/rate', async (req: Request, res: Response): Promise<voi
       res.status(500).json({ error: 'The package rating system encountered an unexpected error.' });
     }
   });
-  
+
+  export default router;
