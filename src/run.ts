@@ -20,7 +20,8 @@ import app from './app';
 // charlie's additions:
 import packageManager from './packageManager';
 import cleanupRoutes from './tests/cleanup';
-import { resetState } from './resetState'; 
+import resetRouter from './resetRouter';
+
 /* processUrl:
   1.) determines which URL is passed (GitHub or NPM) and calls the proper metric calculation function.
   2.) calculates the netScore and handles all rounding for each score.
@@ -258,7 +259,7 @@ function startServer() {
 
   // Add your API routes here
   app.use('/cleanup', cleanupRoutes); //for cleaning
-  app.use('/reset', resetState);
+  app.use('/reset', resetRouter);
 
   // Add packageManager routes for upload/update and downloading
   app.use('/', packageManager);  // Mount the packageManager routes

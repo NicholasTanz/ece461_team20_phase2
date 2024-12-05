@@ -225,7 +225,7 @@ async function runTests() {
     // );
 
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/reset -H "Content-Type: application/json" -H "X-Authorization: your-valid-token"`,
+      `curl -X DELETE http://localhost:9999/reset -H "Content-Type: application/json"`,
       'Reset uploads and downloads directories'
     );
 
