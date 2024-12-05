@@ -1,56 +1,14 @@
 Team Members: Nicholas Tanzillo, Akash Amalarasan, Charlie Kim, Alison Liang.
 
-# Purpose:
-The main purpose of this project is to take in a number of URLs from a file of GitHub and npm repositories and assign 
-a score to them based on 5 metrics we have elected to use. Below is documentation that includes how to set up the code,
-how to interact with it onces it has been set up, the metrics we use to calculate netScore and their justification. 
+# Package Manager
 
+A web-based package management system that allows users to **rate**, **upload**, **update**, and **remove** packages from the system. The application consists of both a **frontend** and a **backend**, developed using **TypeScript** and deployed using **AWS**.
 
-## Setup Instructions
-> **Note**: Develop on eceprog, this is the environment that our project will be tested on. 
+## Tech Stack
 
-1. **Set environment variables:**
-  ```bash
-  export GITHUB_TOKEN=your_github_token_here
-  export LOG_FILE=your_log_file_path_here
-  export LOG_LEVEL=your_log_level_here
-  ```
-
-2. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/NicholasTanz/ece461_team20_phase2
-   ```
-
-3. **Change Directory:**
-   Navigate into the project directory:
-   ```bash
-   cd ece461_team20_phase2
-   ```
-
-4. **Install Dependencies:**
-   Run the following command to install all necessary dependencies:
-   ```bash
-   ./run install
-   ```
-
-5. **Run Individual Tests:**
-   To run a specific test, use:
-   ```bash
-   ./run <file_name>.txt
-   ```
-
-6. **Run the Test Suite:**
-   To execute the entire test suite, use:
-   ```bash
-   ./run test
-   ```
-
-7. **Syntax Checker:**
-   Refer to the [syntax checker](#) for ensuring correctness.
-
-## How to interact with the project:
-* add a design of our project here, along with repo structure.
-
+- **Frontend**: Vue.js with TypeScript
+- **Backend**: Node.js with Express
+- **Deployed on**: AWS
 
 ## What metrics we use to calculate NetScore and our justification:
   Bus Factor: This metric measures essentially how many people are working on the code. Basically, how many people
