@@ -176,3 +176,73 @@ Measures how quickly a new developer can understand the codebase. Based on:
 
 <h3>Downloading Packages</h3>
 <pre><code>curl -X GET "http://localhost:3000/receiver/download/test-package-content-ver-1-1-0" -o "downloads/test-package-content-1.0.0.zip"</code></pre>
+
+---
+
+## Local Development Setup
+
+This project includes a **backend** and a **frontend**, which need to be set up separately for local development.
+
+---
+
+### **Backend Setup**
+
+1. Navigate to the root directory of the project:
+   ```bash
+   cd ece461_team20_phase2
+   ```
+
+2. Install backend dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the backend server:
+   ```bash
+   npx ts-node src/run.ts
+   ```
+
+4. Verify the backend is running:
+   - By default, the server listens on port `3000`. You can confirm by accessing:
+     ```
+     http://localhost:3000
+     ```
+
+---
+
+### **Frontend Setup**
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd ece461_team20_phase2/src/frontend/vite-project
+   ```
+
+2. Install frontend dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the frontend development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Access the frontend:
+   - The frontend runs on port `5173` by default. You can access it at:
+     ```
+     http://localhost:5173
+     ```
+
+---
+
+### **Important Notes**
+- The **backend** and **frontend** have independent setups, each with its own `package.json` and `package-lock.json` files. Ensure you install dependencies in the correct directories:
+  - **Backend dependencies**: Installed in the root directory.
+  - **Frontend dependencies**: Installed in `src/frontend/vite-project`.
+  
+- If you make changes to the backend code, restart the server to reflect updates.
+
+---
+
+
+
