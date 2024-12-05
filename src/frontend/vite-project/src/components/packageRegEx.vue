@@ -16,7 +16,7 @@
   
   <script lang="ts">
   import { ref } from 'vue';
-  import { fetchPackagesByRegEx } from '../services/api';
+  import { byRegex } from '../services/api';
   
   export default {
     setup() {
@@ -24,7 +24,7 @@
       const packages = ref([]);
   
       const findPackages = async () => {
-        packages.value = await fetchPackagesByRegEx(regex.value);
+        packages.value = await byRegex(regex.value);
       };
   
       return { regex, packages, findPackages };

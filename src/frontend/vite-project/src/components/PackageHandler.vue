@@ -16,6 +16,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchPackageById } from '../services/api';
 
+// needs to support get, put, delete /package:id endpoint. 
 export default {
   setup() {
     const route = useRoute();

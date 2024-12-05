@@ -8,14 +8,14 @@
   
   <script lang="ts">
   import { ref } from 'vue';
-  import { uploadPackage } from '../services/api';
+  import { listPackages } from '../services/api';
   
   export default {
     setup() {
       const packageData = ref('');
   
       const uploadPackageHandler = async () => {
-        await uploadPackage(packageData.value);
+        await listPackages(packageData.value);
         alert('Package uploaded successfully!');
       };
   

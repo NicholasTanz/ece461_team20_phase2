@@ -11,7 +11,7 @@
   export default {
     setup() {
       const resetSystemHandler = async () => {
-        await resetSystem();
+        await resetSystem("reset");
         alert('System reset successfully!');
       };
   
