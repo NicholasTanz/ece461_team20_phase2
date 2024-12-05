@@ -66,7 +66,7 @@ export default defineComponent({
 
     const navigateTo = (action: string) => {
       if (
-        ["multipleOptions", "rate", "cost"].includes(action) &&
+        ["multipleOptions", "rate", "cost", "upload"].includes(action) &&
         !packageName.value
       ) {
         alert("Please enter a package name or ID.");
@@ -78,7 +78,7 @@ export default defineComponent({
           router.push({ name: "PackageDetails", params: { id: packageName.value } });
           break;
         case "upload":
-          router.push({ name: "PostPackage" });
+          router.push({ name: "PostPackage", params: { id: packageName.value }});
           break;
         case "manyPackages":
           router.push({ name: "UploadPackage" });

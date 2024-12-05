@@ -31,6 +31,11 @@
 </template>
 
 <script lang="ts">
+/* 
+This component is responsible for the /package/:id (get, put, delete) endpoint. 
+NOTE: This component supports multiple http methods, AND is NOT the /package endpoint. .
+It utilizes the fetchPackageById API function to make the request to the backend.
+*/
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { fetchPackageById, updatePackageById, deletePackageById } from "../services/api";
