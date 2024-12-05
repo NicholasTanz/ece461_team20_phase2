@@ -22,32 +22,40 @@
       
       <div class="buttons">
         <button 
-          @click="navigateTo('details')" 
-          :aria-disabled="!packageName"
+          @click="navigateTo('multipleOptions')" 
         >
-          View Package Details
+          Package Options (get, put, delete) /package/:id
         </button>
+
+        <button @click="navigateTo('upload')">
+          Post a Package (post) /package
+        </button>
+
         <button 
-          @click="navigateTo('delete')" 
-          :aria-disabled="!packageName"
+          @click="navigateTo('manyPackages')" 
         >
-          Delete a Package
+          Post Multiple Packages (post) /packages
         </button>
-        <button @click="navigateTo('upload')">Upload a Package</button>
+      
         <button 
-          @click="navigateTo('rate')" 
-          :aria-disabled="!packageName"
+          @click="navigateTo('reset')" 
         >
-          Rate a Package
+        Reset System (delete) /reset
+      </button>
+
+        <button @click="navigateTo('regex')">
+          Search by RegEx (get) /package/byRegEx
         </button>
-        <button 
-          @click="navigateTo('cost')" 
-          :aria-disabled="!packageName"
-        >
-          View Package Cost
+      
+      
+        <button @click="navigateTo('cost')">
+          Cost depending on the package (get) /package/:id/cost
         </button>
-        <button @click="navigateTo('regex')">Search by RegEx</button>
-        <button @click="navigateTo('reset')">Reset System</button>
+
+        <button @click="navigateTo('rate')">
+          Rate a package (get) /package/:id/rate
+        </button>
+
       </div>
     </div>
 
@@ -75,13 +83,13 @@ export default defineComponent({
       }
 
       switch (action) {
-        case "details":
+        case "multipleOptions":
           router.push({ name: "PackageDetails", params: { id: packageName.value } });
           break;
         case "upload":
-          router.push({ name: "DeletePackage", params: { id: packageName.value } });
+          router.push({ name: "PostPackage" });
           break;
-        case "upload":
+        case "manyPackages":
           router.push({ name: "UploadPackage" });
           break;
         case "rate":

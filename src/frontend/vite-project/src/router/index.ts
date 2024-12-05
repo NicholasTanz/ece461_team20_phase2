@@ -5,7 +5,7 @@ import Packages from '../components/Packages.vue';
 import packageRater from '../components/packageRater.vue';
 import packageCost from '../components/packageCost.vue';
 import packageRegEx from '../components/packageRegEx.vue';
-import { postPackage } from '../services/api';
+import packagePost from '../components/packagePost.vue';
 
 const routes = [
   {
@@ -16,7 +16,7 @@ const routes = [
   {
     path: "/package",
     name: "PostPackage",
-    component: postPackage, // Component to handle /package (post)
+    component: packagePost, // Component to handle /package (post)
   },
   {
     path: "/packages",
