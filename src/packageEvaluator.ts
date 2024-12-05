@@ -1,10 +1,7 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
-import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 import logger from './logger';
-import axios from 'axios';
 import { processUrl } from './run'; // Adjust the path based on your directory structure
 
 async function evaluatePackage(url: string) {
@@ -82,4 +79,5 @@ router.get('/package/:id/rate', async (req: Request, res: Response): Promise<voi
       res.status(500).json({ error: 'The package rating system encountered an unexpected error.' });
     }
   });
-  
+
+  export default router;

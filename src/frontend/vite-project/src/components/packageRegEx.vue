@@ -19,6 +19,16 @@
 </template>
 
 <script lang="ts">
+/* 
+
+This component is responsible for the /package/byRegEx (post) endpoint. 
+
+It provides a button to search for packages utilizing RegEx and displays the result.
+
+It utilizes the byRegex API function to make the request to the backend.
+
+*/
+
 import { ref } from 'vue';
 import { byRegex } from '../services/api';
 

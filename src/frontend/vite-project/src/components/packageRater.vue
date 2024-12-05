@@ -26,6 +26,15 @@
 </template>
 
 <script lang="ts">
+/* 
+
+This component is responsible for the /package/:id/rate (get) endpoint. 
+
+It provides a button to get the rating for a package.
+
+It utilizes the ratePackage API function to make the request to the backend.
+
+*/
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { ratePackage } from '../services/api';

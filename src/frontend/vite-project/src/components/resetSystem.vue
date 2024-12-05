@@ -6,6 +6,16 @@
 </template>
 
 <script lang="ts">
+/* 
+
+This component is responsible for the /reset (delete) endpoint. 
+
+It provides a button to reset the system and displays the result in an alert.
+
+It utilizes the resetSystem API function to make the request to the backend.
+
+*/
+
 import { resetSystem } from '../services/api';
 
 export default {

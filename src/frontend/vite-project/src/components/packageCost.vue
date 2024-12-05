@@ -28,6 +28,16 @@
 </template>
 
 <script lang="ts">
+/* 
+
+This component is responsible for the /package/:id/cost (get) endpoint. 
+
+It provides a button to search for the cost of depending on the package and displays the results.
+
+It utilizes the fetchPackageCost API function to make the request to the backend.
+
+*/
+
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchPackageCost } from '../services/api';
