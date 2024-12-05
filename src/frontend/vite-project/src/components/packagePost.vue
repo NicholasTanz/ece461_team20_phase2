@@ -21,7 +21,7 @@
   
   NOTE: This component is NOT the /package:id endpoint..
   
-  It utilizes the fetchPackageById API function to make the request to the backend.
+  It utilizes the postPackage  API function to make the request to the backend.
   
   */
   

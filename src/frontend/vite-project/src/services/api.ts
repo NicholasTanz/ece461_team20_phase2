@@ -56,7 +56,12 @@ export async function byRegex(id: string) {
 }
 
 // /packages (post)
-export async function listPackages(id: string) {
-  const response = await axios.get(`${API_BASE}/packages`);
-  return response.data; // Package details
+export async function listPackages(packages: string[]) {
+  try {
+    const response = await axios.post(`${API_BASE}/packages`, { packages });
+    return response.data; // Response from the backend after uploading the packages
+  } catch (error) {
+    console.error("Error posting packages:", error);
+    throw new Error("Failed to upload packages. Please try again."); // Throw error for the caller to handle
+  }
 }
