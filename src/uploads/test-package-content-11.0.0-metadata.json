@@ -1,7 +1,0 @@
-{
-  "Name": "test-package-content",
-  "Version": "11.0.0",
-  "ID": "test-package-content-ver-11-0-0",
-  "Method": "Content",
-  "JSProgram": "if (process.argv.length === 7) { console.log(\"Success\"); process.exit(0); } else { console.log(\"Failed\"); process.exit(1); }"
-}
