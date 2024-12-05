@@ -27,6 +27,8 @@ const router = Router();
 const uploadsDir = path.join(__dirname, 'uploads');
 const downloadsDir = path.join(__dirname, '../downloads');
 
+
+// GET package/id
 router.get('/package/:id/rate', async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
 
