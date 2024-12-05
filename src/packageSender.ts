@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 import logger from './logger';
 import axios from 'axios';
 
