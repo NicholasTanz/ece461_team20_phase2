@@ -7,6 +7,18 @@
 </template>
 
 <script lang="ts">
+/* 
+
+This component is responsible for the /packages (post) endpoint. 
+
+It provides a button to get multiple packages and displays the result.
+
+It utilizes the listPackages API function to make the request to the backend.
+
+*/
+
+
+
 import { ref } from 'vue';
 import { listPackages } from '../services/api';
 

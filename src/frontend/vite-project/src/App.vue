@@ -78,7 +78,7 @@ export default defineComponent({
         case "details":
           router.push({ name: "PackageDetails", params: { id: packageName.value } });
           break;
-        case "delete":
+        case "upload":
           router.push({ name: "DeletePackage", params: { id: packageName.value } });
           break;
         case "upload":
