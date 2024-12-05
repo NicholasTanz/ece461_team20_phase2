@@ -2,6 +2,7 @@
   <div id="app">
     <h1>Welcome to the Team's Package Manager</h1>
 
+    <!-- Description Section -->
     <section class="description">
       <p>
         This is a package management system that allows users to store, rate, and upload packages. 
@@ -9,7 +10,9 @@
       </p>
     </section>
 
+    <!-- Actions Section -->
     <div class="actions">
+      <!-- Input for Package Name or ID -->
       <label for="package-name" class="visually-hidden">Enter package name or ID:</label>
       <input
         id="package-name"
@@ -19,47 +22,35 @@
         class="input-box"
         aria-label="Package Name or ID"
       />
-      
+
+      <!-- Action Buttons -->
       <div class="buttons">
-        <button 
-          @click="navigateTo('multipleOptions')" 
-        >
+        <button @click="navigateTo('multipleOptions')">
           Package Options (get, put, delete) /package/:id
         </button>
-
         <button @click="navigateTo('upload')">
           Post a Package (post) /package
         </button>
-
-        <button 
-          @click="navigateTo('manyPackages')" 
-        >
+        <button @click="navigateTo('manyPackages')">
           Post Multiple Packages (post) /packages
         </button>
-      
-        <button 
-          @click="navigateTo('reset')" 
-        >
-        Reset System (delete) /reset
-      </button>
-
+        <button @click="navigateTo('reset')">
+          Reset System (delete) /reset
+        </button>
         <button @click="navigateTo('regex')">
           Search by RegEx (get) /package/byRegEx
         </button>
-      
-      
         <button @click="navigateTo('cost')">
           Cost depending on the package (get) /package/:id/cost
         </button>
-
         <button @click="navigateTo('rate')">
           Rate a package (get) /package/:id/rate
         </button>
-
       </div>
     </div>
 
-    <router-view></router-view> <!-- Dynamic component rendered based on the route -->
+    <!-- Dynamic Router View -->
+    <router-view></router-view>
   </div>
 </template>
 
@@ -75,7 +66,7 @@ export default defineComponent({
 
     const navigateTo = (action: string) => {
       if (
-        ["details", "delete", "rate", "cost"].includes(action) &&
+        ["multipleOptions", "rate", "cost"].includes(action) &&
         !packageName.value
       ) {
         alert("Please enter a package name or ID.");
@@ -115,12 +106,12 @@ export default defineComponent({
 </script>
 
 <style>
-/* Global styles */
+/* Global Styles */
 #app {
   font-family: Arial, sans-serif;
   text-align: center;
   padding: 20px;
-  background-color: #f8f8f8;  /* Light background */
+  background-color: #f8f8f8;
   color: #333;
 }
 
@@ -131,20 +122,6 @@ h1 {
 .description {
   margin: 20px 0;
   font-size: 18px;
-}
-
-.team-info {
-  margin: 20px 0;
-  font-size: 16px;
-}
-
-.team-info ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.team-info li {
-  padding: 5px 0;
 }
 
 .actions {
@@ -164,7 +141,7 @@ h1 {
   margin-top: 10px;
 }
 
-/* Button styling */
+/* Button Styling */
 button {
   margin: 5px 10px;
   padding: 10px 20px;
@@ -178,7 +155,8 @@ button {
   outline: none;
 }
 
-button:hover, button:focus {
+button:hover,
+button:focus {
   background-color: #0056b3;
 }
 
@@ -186,7 +164,7 @@ button:focus {
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
 }
 
-/* Visually hidden element for screen readers */
+/* Visually Hidden Element for Screen Readers */
 .visually-hidden {
   position: absolute;
   width: 1px;

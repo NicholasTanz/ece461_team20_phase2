@@ -19,6 +19,18 @@ export async function fetchPackageById(id: string) {
   return response.data; // Package details
 }
 
+// /package/:id (get, put, delete) 
+export async function updatePackageById(id: string) {
+  const response = await axios.get(`${API_BASE}/packages/${id}`);
+  return response.data; // Package details
+}
+
+// /package/:id (get, put, delete) 
+export async function deletePackageById(id: string) {
+  const response = await axios.get(`${API_BASE}/packages/${id}`);
+  return response.data; // Package details
+}
+
 // /package/:id/rate (get)
 export async function ratePackage(id: string) {
   const response = await axios.get(`${API_BASE}/package/${id}/rate`);
