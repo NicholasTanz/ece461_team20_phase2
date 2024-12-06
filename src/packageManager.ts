@@ -1,19 +1,19 @@
 import express from 'express';
-import packageSender from './packageSender';
 import packageIngestion from './packageIngestion';
 // import packageEvaulator from './packageEvaluator'; this is for rate... issues with before routing changes.
 import packageHandler from './packageHandler';
+import packageSearcher from './packageSearcher';
 
 const app = express();
 app.use(express.json());
 
 /*
 TO HANDLE:
-/packages (post)
+/packages (post) (DONE)
 /reset (delete) (DONE)
 
-/package/:id (get, put, delete) (get IS DONE, delete is DONE)
-/package (post)
+/package/:id (get, post, delete) (DONE -> get, post, delete)
+/package (post) (DONE)
 /package/:id/rate (get)
 /package/:id/cost (get) (DONE)
 /package/byRegex (post) (DONE)
@@ -21,11 +21,9 @@ TO HANDLE:
 
 
 app.use('/package', packageHandler);
-app.use()
-
-app.use('/send', packageSender);
-app.use('/ingest', packageIngestion);
-// app.use('/eval', packageEvaulator);
+app.use('/packages', packageSearcher)
+app.use('/ingest', packageIngestion); // ??
+// app.use('/eval', packageEvaulator); 
 
 
 export default app;

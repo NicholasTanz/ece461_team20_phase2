@@ -15,7 +15,7 @@ function parseMetadata(filePath: string) {
   }
   
 // POST /packages
-router.post('/packages', (req: Request, res: Response) => {
+router.post('/', (req: Request, res: Response) => {
   const queries = req.body;
   const offset = parseInt(req.query.offset as string) || 0;
 
@@ -87,3 +87,5 @@ router.post('/packages', (req: Request, res: Response) => {
     });
   }
 });
+
+export default router;
