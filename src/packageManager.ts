@@ -1,6 +1,7 @@
 import express from 'express';
 import packageIngestion from './packageIngestion';
-// import packageEvaulator from './packageEvaluator'; this is for rate... issues with before routing changes.
+// import packageEvaulator from './packageEvaluator'; this is for rate... 
+// we had issues with before routing changes.
 import packageHandler from './packageHandler';
 import packageSearcher from './packageSearcher';
 
@@ -9,16 +10,8 @@ app.use(express.json());
 
 /*
 TO HANDLE:
-/packages (post) (DONE)
-/reset (delete) (DONE)
-
-/package/:id (get, post, delete) (DONE -> get, post, delete)
-/package (post) (DONE)
-/package/:id/rate (get)
-/package/:id/cost (get) (DONE)
-/package/byRegex (post) (DONE)
+/package/:id/rate (get) - we had issues with this endpoint before routing changes.
 */
-
 
 app.use('/package', packageHandler);
 app.use('/packages', packageSearcher)
