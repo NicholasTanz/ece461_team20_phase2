@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile  # Refers to the backend Dockerfile in the root
     ports:
-      - "9999:9999"  # Exposes backend port
+      - "9999:9999"
     networks:
       - app-network
 
@@ -16,7 +16,7 @@ services:
       context: ./src/frontend/vite-project  # Refers to the frontend Dockerfile inside ./src/frontend/vite-project
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"  # Exposes frontend port (Vite default)
+      - "5173:5173"
     networks:
       - app-network
 

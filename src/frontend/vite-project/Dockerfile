@@ -16,20 +16,18 @@ RUN cd /temp/prod && bun install --frozen-lockfile --production
 # Copy node_modules from temp directory, then copy all (non-ignored) project files into the image
 FROM base AS prerelease
 COPY --from=install /temp/dev/node_modules node_modules
-COPY . .  # For frontend, this copies the entire frontend code
+COPY . .  
 
 # [optional] build the frontend
 ENV NODE_ENV=production
-RUN bun run build  # Assuming `bun run build` builds the frontend assets for production
 
 # Copy production dependencies and source code into final image
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/dist ./dist  # Assuming build output is in the dist directory
 
 # Run the frontend app (development mode)
 USER bun
-EXPOSE 5173/tcp  # Expose frontend port (Vite default)
+EXPOSE 5173
 
 # For running Vite in development mode with --host
-ENTRYPOINT ["bun", "run", "dev", "--", "--host"]  # This uses `bun run dev -- --host` for frontend development
+ENTRYPOINT ["bun", "run", "dev", "--", "--host"] 
