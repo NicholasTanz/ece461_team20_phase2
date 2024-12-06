@@ -69,7 +69,7 @@ async function runTests() {
   try {
     // 1. Upload test-package-content-11.0.0.zip
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/send/package \
+      `curl -X POST http://localhost:9999/package \
       -H "Content-Type: multipart/form-data" \
       -F "Name=test-package-content" \
       -F "Version=11.0.0" \
@@ -79,7 +79,7 @@ async function runTests() {
 
     // 2. Upload a new package via URL
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/send/package \
+      `curl -X POST http://localhost:9999/package \
       -H "Content-Type: application/json" \
       -d "{\\"Name\\":\\"test-package-url\\",\\"Version\\":\\"1.1.0\\",\\"URL\\":\\"https://github.com/jashkenas/underscore\\",\\"JSProgram\\":\\"if (process.argv.length === 7) { console.log(\\\\\\"Success\\\\\\"); process.exit(0); } else { console.log(\\\\\\"Failed\\\\\\"); process.exit(1); }\\"}"`,
       'Upload a new package via URL'
@@ -87,7 +87,7 @@ async function runTests() {
 
     // Upload initial package for update testing
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/send/package \
+      `curl -X POST http://localhost:9999/package \
       -H "Content-Type: multipart/form-data" \
       -F "Name=test-update-content" \
       -F "Version=" \
@@ -97,7 +97,7 @@ async function runTests() {
     );
 
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/send/package \
+      `curl -X POST http://localhost:9999/package \
       -H "Content-Type: application/json" \
       -d "{\\"Name\\":\\"test-update-url\\",\\"Version\\":\\"1.0.0\\",\\"URL\\":\\"https://github.com/jashkenas/underscore\\",\\"JSProgram\\":\\"if (process.argv.length === 7) { console.log(\\\\\\"Success\\\\\\"); process.exit(0); } else { console.log(\\\\\\"Failed\\\\\\"); process.exit(1); }\\"}"`,
       'Upload a new package via URL'
@@ -105,7 +105,7 @@ async function runTests() {
 
     // 3. Update content-based file to version 1.2.1
     await runCurlCommand(
-      `curl -X PUT http://localhost:9999/send/package/test-update-content-ver-1-0-0 \
+      `curl -X PUT http://localhost:9999/package/test-update-content-ver-1-0-0 \
       -H "Content-Type: multipart/form-data" \
       -F "Name=test-update-content" \
       -F "Version=1.2.1" \
@@ -116,7 +116,7 @@ async function runTests() {
 
     // 4. Update URL-based file to version 1.2.1
     await runCurlCommand(
-      `curl -X PUT http://localhost:9999/send/package/test-update-url-ver-1-0-0 \
+      `curl -X PUT http://localhost:9999/package/test-update-url-ver-1-0-0 \
       -H "Content-Type: application/json" \
       -d "{\\"Name\\":\\"test-update-url\\",\\"Version\\":\\"1.2.1\\",\\"URL\\":\\"https://github.com/jashkenas/underscore\\",\\"JSProgram\\":\\"if (process.argv.length === 7) { console.log(\\\\\\"Success\\\\\\"); process.exit(0); } else { console.log(\\\\\\"Failed\\\\\\"); process.exit(1); }\\"}"`,
       'Update URL-based file to version 1.1.1'
@@ -124,7 +124,7 @@ async function runTests() {
 
     // 5. Update content-based file to version 1.1.1
     await runCurlCommand(
-      `curl -X PUT http://localhost:9999/send/package/test-update-content-ver-1-0-0 \
+      `curl -X PUT http://localhost:9999/package/test-update-content-ver-1-0-0 \
       -H "Content-Type: multipart/form-data" \
       -F "Name=test-update-content" \
       -F "Version=1.1.1" \
@@ -135,7 +135,7 @@ async function runTests() {
 
     // 6. Update URL-based file to version 1.1.1
     await runCurlCommand(
-      `curl -X PUT http://localhost:9999/send/package/test-update-url-ver-1-0-0 \
+      `curl -X PUT http://localhost:9999/package/test-update-url-ver-1-0-0 \
       -H "Content-Type: application/json" \
       -d "{\\"Name\\":\\"test-update-url\\",\\"Version\\":\\"1.1.1\\",\\"URL\\":\\"https://github.com/jashkenas/underscore\\",\\"JSProgram\\":\\"if (process.argv.length === 7) { console.log(\\\\\\"Success\\\\\\"); process.exit(0); } else { console.log(\\\\\\"Failed\\\\\\"); process.exit(1); }\\"}"`,
       'Update URL-based file to version 1.2.0'
@@ -143,7 +143,7 @@ async function runTests() {
 
     // 7. Attempt to update content-based file to version 1.1.0 (should fail)
     await runCurlCommand(
-      `curl -X PUT http://localhost:9999/send/package/test-update-content-ver-1-0-0 \
+      `curl -X PUT http://localhost:9999/package/test-update-content-ver-1-0-0 \
       -H "Content-Type: multipart/form-data" \
       -F "Name=test-update-content" \
       -F "Version=1.1.0" \
@@ -154,7 +154,7 @@ async function runTests() {
 
     // 8. Update URL-based file to version 1.1.0 (should succeed)
     await runCurlCommand(
-      `curl -X PUT http://localhost:9999/send/package/test-update-url-ver-1-0-0 \
+      `curl -X PUT http://localhost:9999/package/test-update-url-ver-1-0-0 \
       -H "Content-Type: application/json" \
       -d "{\\"Name\\":\\"test-update-url\\",\\"Version\\":\\"1.1.0\\",\\"URL\\":\\"https://github.com/jashkenas/underscore\\",\\"JSProgram\\":\\"if (process.argv.length === 7) { console.log(\\\\\\"Success\\\\\\"); process.exit(0); } else { console.log(\\\\\\"Failed\\\\\\"); process.exit(1); }\\"}"`,
       'Update URL-based file to version 1.1.0'
@@ -162,30 +162,30 @@ async function runTests() {
 
     // 9. Fetch test-package-content
     await runCurlCommand(
-      `curl -X GET ${BASE_URL}/fetch/package/test-package-content-ver-11-0-0`,
+      `curl -X GET ${BASE_URL}/package/test-package-content-ver-11-0-0`,
       'Download test-package-content version 11.0.0'
     );
 
     // 10. Fetch test-package-url
     await runCurlCommand(
-      `curl -X GET ${BASE_URL}/fetch/package/test-package-url-ver-1-1-0`,
+      `curl -X GET ${BASE_URL}/package/test-package-url-ver-1-1-0`,
       'Download test-package-url version 1.1.0'
     );
 
     // 11. Fetch test-update-url (updated version)
     await runCurlCommand(
-      `curl -X GET ${BASE_URL}/fetch/package/test-update-url-ver-1-2-1`,
+      `curl -X GET ${BASE_URL}/package/test-update-url-ver-1-2-1`,
       'Download test-update-url version 1.2.1'
     );
 
     // 12. Fetch test-update-content (updated version)
     await runCurlCommand(
-      `curl -X GET ${BASE_URL}/fetch/package/test-update-content-ver-1-2-1`,
+      `curl -X GET ${BASE_URL}/package/test-update-content-ver-1-2-1`,
       'Download test-update-content version 1.2.1'
     );
     // 13. Search for packages with "URL" in their names
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/search/package/byRegEx \
+      `curl -X POST http://localhost:9999/package/byRegEx \
       -H "Content-Type: application/json" \
       -H "X-Authorization: your-valid-token" \
       -d "{\\"RegEx\\": \\".*url.*\\"}"`,
@@ -194,7 +194,7 @@ async function runTests() {
     
     // 14. Search for packages with "Content" in their names
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/search/package/byRegEx \
+      `curl -X POST http://localhost:9999/package/byRegEx \
       -H "Content-Type: application/json" \
       -H "X-Authorization: your-valid-token" \
       -d "{\\"RegEx\\": \\".*content.*\\"}"`,
@@ -203,21 +203,21 @@ async function runTests() {
 
     // 15. Delete test-update-content-1.0.0
     await runCurlCommand(
-      `curl -X DELETE http://localhost:9999/delete/package/test-update-url-ver-1-0-0 \
+      `curl -X DELETE http://localhost:9999/package/test-update-url-ver-1-0-0 \
       -H "X-Authorization: your-valid-token"`,
       'Delete test-update-content-1.0.0'
     );
 
     // 16. Delete test-update-url-1.0.0
     await runCurlCommand(
-      `curl -X DELETE http://localhost:9999/delete/package/test-update-content-ver-1-0-0 \
+      `curl -X DELETE http://localhost:9999/package/test-update-content-ver-1-0-0 \
       -H "X-Authorization: your-valid-token"`,
       'Delete test-update-url-1.0.0'
     );
 
     // 17. Display all packages using "*"
     await runCurlCommand(
-      `curl -X POST http://localhost:9999/search/packages \
+      `curl -X POST http://localhost:9999/packages \
       -H "Content-Type: application/json" \
       -H "X-Authorization: your-valid-token" \
       -d "[{\\"Name\\": \\"*\\"}"]"`,
