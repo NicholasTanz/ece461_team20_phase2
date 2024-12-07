@@ -1,0 +1,23 @@
+{
+  "SwaggerSpecFilePath": [
+    "C:\\Users\\Alison\\myProjects\\461\\ece461_team20_phase2\\ece461-project-phase2-fall2024-updated.yaml"
+  ],
+  "GrammarOutputDirectoryPath": "C:\\Users\\Alison\\myProjects\\461\\restler_working_dir\\Compile",
+  "CustomDictionaryFilePath": "C:\\Users\\Alison\\myProjects\\461\\restler_working_dir\\Compile\\defaultDict.json",
+  "IncludeOptionalParameters": true,
+  "UseHeaderExamples": true,
+  "UsePathExamples": false,
+  "UseQueryExamples": true,
+  "UseBodyExamples": true,
+  "UseAllExamplePayloads": false,
+  "DiscoverExamples": false,
+  "ExamplesDirectory": "",
+  "DataFuzzing": true,
+  "ReadOnlyFuzz": false,
+  "ResolveQueryDependencies": true,
+  "ResolveBodyDependencies": true,
+  "ResolveHeaderDependencies": false,
+  "UseRefreshableToken": true,
+  "AllowGetProducers": false,
+  "TrackFuzzedParameterNames": false
+}
