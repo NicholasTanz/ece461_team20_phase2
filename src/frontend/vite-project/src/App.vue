@@ -26,7 +26,7 @@
       <!-- Action Buttons -->
       <div class="buttons">
         <button @click="navigateTo('multipleOptions')">
-          Package Options (get, put, delete) /package/:id
+          Package Options 
         </button>
         <button @click="navigateTo('upload')">
           Upload a Package
@@ -41,7 +41,7 @@
           Find Packages by RegEx
         </button>
         <button @click="navigateTo('cost')">
-          Cost depending on the package (get) /package/:id/cost
+          Get the cost of depending on a Package
         </button>
         <button @click="navigateTo('rate')">
           Rate a package (get) /package/:id/rate

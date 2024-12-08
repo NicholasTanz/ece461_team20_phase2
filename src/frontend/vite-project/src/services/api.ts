@@ -30,10 +30,11 @@ export async function fetchPackageById(id: string) {
 }
 
 // /packages/:id (PUT)
-export async function updatePackageById(id: string) {
-  const response = await axios.put(`${API_BASE}/packages/${id}`); // Fixed to PUT
-  return response // just response for now.
+export async function updatePackageById(id: string, packageData: object) {
+  const response = await axios.put(`${API_BASE}/packages/${id}`, packageData); // Send package data in the body
+  return response; // Just response for now.
 }
+
 
 // /packages/:id (DELETE)
 export async function deletePackageById(id: string) {
@@ -47,10 +48,15 @@ export async function ratePackage(id: string) {
   return response // just response for now.
 }
 
-// /packages/:id/cost (GET)
+// /packages/{id}/cost (GET)
 export async function fetchPackageCost(id: string) {
-  const response = await axios.get(`${API_BASE}/packages/${id}/cost`); // Correct method
-  return response // just response for now.
+  try {
+    const response = await axios.get(`${API_BASE}/packages/${id}/cost`);
+    return response; // Returning the full response from the API
+  } catch (error) {
+    console.error("Error fetching package cost:", error);
+    throw error; // Rethrow the error for the caller to handle it
+  }
 }
 
 // /reset (DELETE)
