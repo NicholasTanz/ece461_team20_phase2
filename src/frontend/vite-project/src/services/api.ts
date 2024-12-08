@@ -5,7 +5,7 @@ file used to interact with the backend api and fetch data from the server.
 */
 
 import axios from 'axios';
-const API_BASE = 'http://54.163.153.81:9999'; // Corrected the API base URL
+const API_BASE = 'http://3.84.115.237:9999'; // Corrected the API base URL
 
 // /packages (POST)
 export async function postPackage(id: string) {
