@@ -6,7 +6,7 @@ import packageRater from '../components/packageRater.vue';
 import packageCost from '../components/packageCost.vue';
 import packageRegEx from '../components/packageRegEx.vue';
 import packagePost from '../components/packagePost.vue';
-import tracks from '../components/tracks.vue';
+import Tracks from '../components/Tracks.vue';
 
 const routes = [
   {
@@ -22,7 +22,7 @@ const routes = [
   {
     path: "/tracks",
     name: "Tracks",
-    component: tracks, // Component to handle /tracks (get)
+    component: Tracks, // Component to handle /tracks (get)
   },
   {
     path: "/packages",

@@ -1,75 +1,46 @@
 <template>
   <div>
     <h1>Planned Track</h1>
-
-    <!-- Loading state -->
-    <p v-if="loading">Loading...</p>
-
-    <!-- Error state -->
-    <p v-else-if="error" style="color: red;">Error: {{ error }}</p>
-
-    <!-- Display planned tracks -->
-    <ul v-else>
-      <li v-for="track in plannedTracks" :key="track">{{ track }}</li>
-    </ul>
+    <p>{{ plannedTrack }}</p>
   </div>
 </template>
 
 <script lang="ts">
-/*
-  This component handles displaying the planned tracks fetched from the /tracks endpoint.
+/* 
 
-  It utilizes the fetchTrack API function to get the data from the backend.
+This component is responsible for the /tracks (get) endpoint. 
+
+It retrieves the planned track from the backend and displays it.
+
+It utilizes the fetchTrack API function to make the request to the backend.
+
 */
+
+import { fetchTrack } from '../services/api';
 import { ref, onMounted } from 'vue';
-import { fetchTrack } from '../services/api'; // Adjust the path if necessary
 
 export default {
   setup() {
-    const plannedTracks = ref<string[]>([]); // Array to store planned tracks
-    const loading = ref<boolean>(true); // Loading state
-    const error = ref<string | null>(null); // Error state
+    // Store for the planned track
+    const plannedTrack = ref<string>('');
 
-    // Function to fetch planned tracks
-    const getTracks = async () => {
+    // Handler to fetch and display the planned track
+    const getTrack = async () => {
       try {
-        error.value = null; // Clear any previous errors
-        const response = await fetchTrack(); // Fetch tracks from the API
-        plannedTracks.value = response.data.plannedTracks; // Update tracks
-      } catch (err) {
-        console.error('Error fetching planned tracks:', err);
-        error.value = 'Failed to load planned tracks. Please try again.';
-      } finally {
-        loading.value = false; // Stop loading
+        const response = await fetchTrack(); // Call API to get planned track
+        console.log(response); // Log the response for debugging
+        plannedTrack.value = response.data.plannedTracks[0]; // Assuming only one track is returned
+      } catch (error) {
+        console.error('Error fetching the planned track:', error);
+        alert('Failed to load planned track. Please try again.'); // Error alert
       }
     };
 
-    // Fetch tracks when the component is mounted
     onMounted(() => {
-      getTracks();
+      getTrack();
     });
 
-    return { plannedTracks, loading, error };
+    return { plannedTrack };
   },
 };
 </script>
-
-<style scoped>
-h1 {
-  font-size: 1.5em;
-  color: #333;
-}
-p {
-  color: #666;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  background: #f4f4f4;
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 4px;
-}
-</style>
