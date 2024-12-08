@@ -14,6 +14,7 @@ import * as performance from 'perf_hooks';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
+import cors from 'cors';
 import { exec } from 'child_process';
 import express from 'express';
 // charlie's additions:
@@ -248,6 +249,7 @@ export async function processAllUrls(urls: string[]) {
 // Set up express server
 function startServer() {
   const app = express();
+  app.use(cors())
   const port = 9999; // change later. 
 
   app.use(express.json());
