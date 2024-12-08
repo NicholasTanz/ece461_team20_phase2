@@ -44,7 +44,7 @@
           Get the cost of depending on a Package
         </button>
         <button @click="navigateTo('rate')">
-          Rate a package (get) /package/:id/rate
+          Rate a package
         </button>
       </div>
     </div>
