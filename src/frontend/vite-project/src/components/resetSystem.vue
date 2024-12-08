@@ -23,7 +23,7 @@ export default {
     // Handler for the Reset System button
     const resetSystemHandler = async () => {
       try {
-        const response = await resetSystem('reset'); // Call API to reset system
+        const response = await resetSystem(); // Call API to reset system
         console.log(response); // Log the response for debugging
         alert('System reset successfully!'); // Success alert
       } catch (error) {
