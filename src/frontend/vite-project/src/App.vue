@@ -32,7 +32,7 @@
           Post a Package (post) /package
         </button>
         <button @click="navigateTo('manyPackages')">
-          Post Multiple Packages (post) /packages
+          Find Multiple Packages
         </button>
         <button @click="navigateTo('reset')">
           Reset System

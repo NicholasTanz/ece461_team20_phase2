@@ -70,7 +70,21 @@ export async function byRegex(regex: string) {
 
 
 // /packages (POST)
-export async function listPackages(packages: string[]) {
-  const response = await axios.post(`${API_BASE}/packages`, { packages }); // Fixed to POST
-  return response // just response for now.
+export async function listPackages(packageQueries: { Name: string, Version?: string }[], offset?: number) {
+  try {
+    const response = await axios.post(
+      `${API_BASE}/packages`,
+      packageQueries, // Send the request body as an array of PackageQuery objects
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        params: offset ? { offset } : {}, // Add offset as a query parameter if provided
+      }
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching packages:", error);
+    throw error; // Rethrow error for further handling
+  }
 }
