@@ -67,15 +67,15 @@ const testURL = 'https://github.com/jashkenas/underscore';
 
 async function runTests() {
   try {
-    // // 1. Upload test-package-content-11.0.0.zip
-    // await runCurlCommand(
-    //   `curl -X POST http://localhost:9999/send/package \
-    //   -H "Content-Type: multipart/form-data" \
-    //   -F "Name=test-package-content" \
-    //   -F "Version=11.0.0" \
-    //   -F "content=@${testFilePath}"`,
-    //   'Upload test-package-content-11.0.0.zip'
-    // );
+    // 1. Upload test-package-content-11.0.0.zip
+    await runCurlCommand(
+      `curl -X POST http://localhost:9999/send/package \
+      -H "Content-Type: multipart/form-data" \
+      -F "Name=test-package-content" \
+      -F "Version=11.0.0" \
+      -F "content=@${testFilePath}"`,
+      'Upload test-package-content-11.0.0.zip'
+    );
 
     // // 2. Upload a new package via URL
     // await runCurlCommand(

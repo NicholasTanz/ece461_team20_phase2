@@ -141,7 +141,7 @@ Measures how quickly a new developer can understand the codebase. Based on:
 <pre><code>npx ts-node src/tests/CURLtests.ts</code></pre>
 
 <h3>Cleaning CURL Test Files</h3>
-<pre><code>curl -X DELETE "http://localhost:3000/cleanup"</code></pre>
+<pre><code>curl -X DELETE "http://localhost:9999/cleanup"</code></pre>
 
 <h3>Building and Running the Server</h3>
 <ol>
