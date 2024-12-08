@@ -2,6 +2,9 @@
 FROM oven/bun:1 AS base
 WORKDIR /usr/src/app
 
+RUN mkdir -p /usr/src/app/src && chmod -R 777 /usr/src/app/src
+
+
 # Install dependencies into temp directory (backend)
 FROM base AS install
 RUN mkdir -p /temp/dev
@@ -25,10 +28,9 @@ RUN bun test
 # Copy production dependencies and source code into final image
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/src/run.ts ./src/run.ts 
+COPY --from=prerelease /usr/src/app/src ./src  
 COPY --from=prerelease /usr/src/app/package.json . 
 
 # Run the backend app
-USER bun
 EXPOSE 9999/tcp
 ENTRYPOINT [ "bun", "run", "src/run.ts" ] 
