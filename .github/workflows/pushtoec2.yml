@@ -1,0 +1,33 @@
+name: Deploy with Docker-Compose
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}  # EC2 instance public IP or DNS
+          EC2_USER: ${{ secrets.EC2_USER }}  # EC2 username (e.g., "ec2-user" or "ubuntu")
+          EC2_KEY: ${{ secrets.EC2_KEY }}    # Private key for SSH, saved in GitHub Secrets
+        run: |
+          # Save the private key to a file
+          echo "${{ secrets.EC2_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+          
+          # Transfer files to the EC2 instance
+          scp -i private_key.pem -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app/
+
+          # Connect to EC2 and run the docker-compose command
+          ssh -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          cd /home/${{ secrets.EC2_USER }}/app
+          docker-compose -f docker-compose.yml up -d --build
+          EOF
