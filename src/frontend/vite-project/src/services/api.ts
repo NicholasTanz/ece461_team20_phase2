@@ -50,10 +50,24 @@ export async function resetSystem() {
 }
 
 // /packages/byRegEx (POST)
-export async function byRegex(id: string) {
-  const response = await axios.post(`${API_BASE}/packages/byRegEx`); // Fixed to POST
-  return response // just response for now.
+export async function byRegex(regex: string) {
+  try {
+    const response = await axios.post(
+      `${API_BASE}/packages/byRegEx`,
+      { RegEx: regex }, // Payload
+      {
+        headers: {
+          'Content-Type': 'application/json', // Content-Type header
+        },
+      }
+    );
+    return response.data; // Return only the data if that's what you need
+  } catch (error) {
+    console.error('Error while fetching packages by regex:', error);
+    throw error; // Re-throw the error to handle it upstream
+  }
 }
+
 
 // /packages (POST)
 export async function listPackages(packages: string[]) {

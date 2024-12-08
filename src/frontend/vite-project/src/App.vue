@@ -38,7 +38,7 @@
           Reset System
         </button>
         <button @click="navigateTo('regex')">
-          Search by RegEx (get) /package/byRegEx
+          Find Packages by RegEx
         </button>
         <button @click="navigateTo('cost')">
           Cost depending on the package (get) /package/:id/cost
