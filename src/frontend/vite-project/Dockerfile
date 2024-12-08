@@ -1,17 +1,20 @@
-# Use Node.js base image
-FROM node:18 AS base
+# Use the official Node.js 18 image as the base
+FROM node:18
+
+# Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Install Bun alongside Node.js
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:$PATH"
+# Copy package.json and package-lock.json to the working directory
+COPY package*.json ./
 
-# Copy files and install dependencies with Bun
-COPY package.json bun.lockb ./
-RUN bun install
+# Install dependencies
+RUN npm install
 
-# Expose port for Vite
+# Copy the rest of the application files
+COPY . .
+
+# Expose the port your app runs on (in this case, 5173)
 EXPOSE 5173
 
-# Use Node.js to run Vite (dev server)
-ENTRYPOINT ["bun", "run", "dev", "--", "--host"]
+# Start the application
+CMD ["npm", "run", "dev", "--", "--host"]
