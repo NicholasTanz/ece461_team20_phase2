@@ -7,7 +7,7 @@ file used to interact with the backend api and fetch data from the server.
 import axios from 'axios';
 const API_BASE = 'http://3.84.115.237:9999'; // Corrected the API base URL
 
-// /packages (POST)
+// /package (POST)
 export async function postPackage(packageData: { Name: string, Version: string, URL: string, JSProgram: string }) {
   try {
     const response = await axios.post(`${API_BASE}/package`, packageData, {
@@ -22,35 +22,35 @@ export async function postPackage(packageData: { Name: string, Version: string, 
   }
 }
 
-// /packages/:id (GET)
+// /package/:id (GET)
 export async function fetchPackageById(id: string) {
-  const response = await axios.get(`${API_BASE}/packages/${id}`); // Correct method
+  const response = await axios.get(`${API_BASE}/package/${id}`); // Correct method
   return response // just response for now.
 }
 
 // /packages/:id (PUT)
 export async function updatePackageById(id: string, packageData: object) {
-  const response = await axios.put(`${API_BASE}/packages/${id}`, packageData); // Send package data in the body
+  const response = await axios.put(`${API_BASE}/package/${id}`, packageData); // Send package data in the body
   return response; // Just response for now.
 }
 
 
-// /packages/:id (DELETE)
+// /package/:id (DELETE)
 export async function deletePackageById(id: string) {
-  const response = await axios.delete(`${API_BASE}/packages/${id}`); // Fixed to DELETE
+  const response = await axios.delete(`${API_BASE}/package/${id}`); // Fixed to DELETE
   return response // just response for now.
 }
 
-// /packages/:id/rate (GET)
+// /package/:id/rate (GET)
 export async function ratePackage(id: string) {
-  const response = await axios.get(`${API_BASE}/packages/${id}/rate`); // Corrected endpoint
+  const response = await axios.get(`${API_BASE}/package/${id}/rate`); // Corrected endpoint
   return response // just response for now.
 }
 
-// /packages/{id}/cost (GET)
+// /package/{id}/cost (GET)
 export async function fetchPackageCost(id: string) {
   try {
-    const response = await axios.get(`${API_BASE}/packages/${id}/cost`);
+    const response = await axios.get(`${API_BASE}/package/${id}/cost`);
     return response; // Returning the full response from the API
   } catch (error) {
     console.error("Error fetching package cost:", error);
@@ -64,11 +64,11 @@ export async function resetSystem() {
   return response // just response for now.
 }
 
-// /packages/byRegEx (POST)
+// /package/byRegEx (POST)
 export async function byRegex(regex: string) {
   try {
     const response = await axios.post(
-      `${API_BASE}/packages/byRegEx`,
+      `${API_BASE}/package/byRegEx`,
       { RegEx: regex }, // Payload
       {
         headers: {
