@@ -4,6 +4,7 @@ import packageIngestion from './packageIngestion';
 // we had issues with before routing changes.
 import packageHandler from './packageHandler';
 import packageSearcher from './packageSearcher';
+import tracks from './tracks';
 
 const app = express();
 app.use(express.json());
@@ -16,6 +17,8 @@ TO HANDLE:
 app.use('/package', packageHandler);
 app.use('/packages', packageSearcher)
 app.use('/ingest', packageIngestion); // ??
+app.use('/tracks', tracks);
+
 // app.use('/eval', packageEvaulator); 
 
 
