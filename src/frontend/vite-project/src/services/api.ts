@@ -8,9 +8,18 @@ import axios from 'axios';
 const API_BASE = 'http://3.84.115.237:9999'; // Corrected the API base URL
 
 // /packages (POST)
-export async function postPackage(id: string) {
-  const response = await axios.post(`${API_BASE}/packages`); // Fixed to POST
-  return response // just response for now.
+export async function postPackage(packageData: { Name: string, Version: string, URL: string, JSProgram: string }) {
+  try {
+    const response = await axios.post(`${API_BASE}/package`, packageData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response; // Return response after successful POST request
+  } catch (error) {
+    console.error("Error uploading package:", error);
+    throw error; // Propagate the error to be handled by the caller
+  }
 }
 
 // /packages/:id (GET)
@@ -20,10 +29,11 @@ export async function fetchPackageById(id: string) {
 }
 
 // /packages/:id (PUT)
-export async function updatePackageById(id: string) {
-  const response = await axios.put(`${API_BASE}/packages/${id}`); // Fixed to PUT
-  return response // just response for now.
+export async function updatePackageById(id: string, packageData: object) {
+  const response = await axios.put(`${API_BASE}/packages/${id}`, packageData); // Send package data in the body
+  return response; // Just response for now.
 }
+
 
 // /packages/:id (DELETE)
 export async function deletePackageById(id: string) {
@@ -37,10 +47,15 @@ export async function ratePackage(id: string) {
   return response // just response for now.
 }
 
-// /packages/:id/cost (GET)
+// /packages/{id}/cost (GET)
 export async function fetchPackageCost(id: string) {
-  const response = await axios.get(`${API_BASE}/packages/${id}/cost`); // Correct method
-  return response // just response for now.
+  try {
+    const response = await axios.get(`${API_BASE}/packages/${id}/cost`);
+    return response; // Returning the full response from the API
+  } catch (error) {
+    console.error("Error fetching package cost:", error);
+    throw error; // Rethrow the error for the caller to handle it
+  }
 }
 
 // /reset (DELETE)
@@ -50,13 +65,41 @@ export async function resetSystem() {
 }
 
 // /packages/byRegEx (POST)
-export async function byRegex(id: string) {
-  const response = await axios.post(`${API_BASE}/packages/byRegEx`); // Fixed to POST
-  return response // just response for now.
+export async function byRegex(regex: string) {
+  try {
+    const response = await axios.post(
+      `${API_BASE}/packages/byRegEx`,
+      { RegEx: regex }, // Payload
+      {
+        headers: {
+          'Content-Type': 'application/json', // Content-Type header
+        },
+      }
+    );
+    return response.data; // Return only the data if that's what you need
+  } catch (error) {
+    console.error('Error while fetching packages by regex:', error);
+    throw error; // Re-throw the error to handle it upstream
+  }
 }
 
+
 // /packages (POST)
-export async function listPackages(packages: string[]) {
-  const response = await axios.post(`${API_BASE}/packages`, { packages }); // Fixed to POST
-  return response // just response for now.
+export async function listPackages(packageQueries: { Name: string, Version?: string }[], offset?: number) {
+  try {
+    const response = await axios.post(
+      `${API_BASE}/packages`,
+      packageQueries, // Send the request body as an array of PackageQuery objects
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        params: offset ? { offset } : {}, // Add offset as a query parameter if provided
+      }
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching packages:", error);
+    throw error; // Rethrow error for further handling
+  }
 }

@@ -26,25 +26,25 @@
       <!-- Action Buttons -->
       <div class="buttons">
         <button @click="navigateTo('multipleOptions')">
-          Package Options (get, put, delete) /package/:id
+          Package Options 
         </button>
         <button @click="navigateTo('upload')">
-          Post a Package (post) /package
+          Upload a Package
         </button>
         <button @click="navigateTo('manyPackages')">
-          Post Multiple Packages (post) /packages
+          Find Multiple Packages
         </button>
         <button @click="navigateTo('reset')">
-          Reset System (delete) /reset
+          Reset System
         </button>
         <button @click="navigateTo('regex')">
-          Search by RegEx (get) /package/byRegEx
+          Find Packages by RegEx
         </button>
         <button @click="navigateTo('cost')">
-          Cost depending on the package (get) /package/:id/cost
+          Get the cost of depending on a Package
         </button>
         <button @click="navigateTo('rate')">
-          Rate a package (get) /package/:id/rate
+          Rate a package
         </button>
       </div>
     </div>

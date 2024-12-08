@@ -1,27 +1,27 @@
 <template>
   <div class="upload-packages">
-    <h1>Upload Multiple Packages</h1>
+    <h1>Search Packages</h1>
 
     <section class="package-input">
       <label for="package-details" class="input-label">Enter Package Details (one per line):</label>
       <textarea
         id="package-details"
         v-model="packageData"
-        placeholder="Enter each package's details on a new line"
+        placeholder="Enter each package's name (optionally with version) on a new line"
         class="input-box"
       ></textarea>
     </section>
 
     <section class="buttons">
-      <button @click="uploadPackages" :disabled="!packageData.trim()">Upload Packages</button>
+      <button @click="searchPackages" :disabled="!packageData.trim()">Search Packages</button>
     </section>
 
     <section v-if="isLoading" class="status">
-      <p>Uploading packages...</p>
+      <p>Searching for packages...</p>
     </section>
 
-    <section v-if="uploadSuccess" class="status">
-      <p class="success-message">Packages uploaded successfully!</p>
+    <section v-if="searchSuccess" class="status">
+      <p class="success-message">Packages found successfully!</p>
     </section>
 
     <section v-if="errorMessage" class="status">
@@ -29,10 +29,10 @@
     </section>
 
     <section v-if="responseData" class="status">
-      <p><strong>Uploaded Packages:</strong></p>
+      <p><strong>Found Packages:</strong></p>
       <ul>
-        <li v-for="(packageInfo, index) in responseData" :key="index">
-          Details: {{ packageInfo }}
+        <li v-for="(pkg, index) in responseData" :key="index">
+          {{ pkg.Name }} - {{ pkg.Version || "No version specified" }}
         </li>
       </ul>
     </section>
@@ -44,45 +44,46 @@ import { ref } from "vue";
 import { listPackages } from "../services/api";
 
 /**
- * This component handles the `/packages` POST endpoint for uploading multiple packages.
- * The user can enter multiple packages' details (one per line), which will be uploaded as a batch.
+ * This component handles the `/packages` POST endpoint for searching packages based on user input.
+ * Users can input package details (name and version) and search for matching packages.
  */
 export default {
   setup() {
     const packageData = ref(""); // Holds the data entered by the user
-    const isLoading = ref(false); // Tracks loading state for uploading
-    const uploadSuccess = ref(false); // Tracks if upload was successful
+    const isLoading = ref(false); // Tracks loading state for the search
+    const searchSuccess = ref(false); // Tracks if the search was successful
     const errorMessage = ref(""); // Holds error messages
-    const responseData = ref(null); // Holds the response data after upload
+    const responseData = ref<any[]>([]); // Holds the list of packages found
 
-    // Function to handle the package upload
-    const uploadPackages = async () => {
+    // Function to handle package search
+    const searchPackages = async () => {
       if (!packageData.value.trim()) return;
 
       isLoading.value = true;
-      uploadSuccess.value = false;
+      searchSuccess.value = false;
       errorMessage.value = "";
-      responseData.value = null;
+      responseData.value = [];
 
-      const packagesArray = packageData.value
+      const packageQueries = packageData.value
         .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line !== "");
+        .map((line) => {
+          const [name, version] = line.trim().split(" "); // Split into Name and Version
+          return { Name: name, Version: version || undefined }; // Version is optional
+        })
+        .filter((query) => query.Name); // Ensure only valid queries are sent
 
       try {
-        // Assuming listPackages is a function that handles the batch upload
-        responseData.value = await listPackages(packagesArray); // Upload the packages as an array
-        uploadSuccess.value = true; // Update success status
-        packageData.value = ""; // Clear the input after successful upload
+        responseData.value = await listPackages(packageQueries); // Search the packages
+        searchSuccess.value = true; // Update success status
       } catch (error) {
-        console.error("Error uploading packages:", error);
-        errorMessage.value = "Failed to upload packages. Please try again."; // Display error
+        console.error("Error searching packages:", error);
+        errorMessage.value = "Failed to find packages. Please try again."; // Display error
       } finally {
         isLoading.value = false; // Reset loading state
       }
     };
 
-    return { packageData, isLoading, uploadPackages, uploadSuccess, errorMessage, responseData };
+    return { packageData, isLoading, searchPackages, searchSuccess, errorMessage, responseData };
   },
 };
 </script>

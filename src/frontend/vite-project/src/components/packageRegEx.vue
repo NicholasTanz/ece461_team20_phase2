@@ -12,42 +12,41 @@
     </div>
 
     <!-- Show no packages found message -->
-    <div v-else>
+    <div v-else-if="searchAttempted">
       <p>No packages found.</p>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-/* 
-
-This component is responsible for the /package/byRegEx (post) endpoint. 
-
-It provides a button to search for packages utilizing RegEx and displays the result.
-
-It utilizes the byRegex API function to make the request to the backend.
-
-*/
-
 import { ref } from 'vue';
 import { byRegex } from '../services/api';
 
 export default {
   setup() {
     const regex = ref(''); // Holds the RegEx input from user
-    const packages = ref<any[]>([]); // Holds the list of packages
+    const packages = ref<{ id: string; name: string }[]>([]); // Holds the list of packages
+    const searchAttempted = ref(false); // Tracks if a search was attempted
 
     // Function to handle package search
     const findPackages = async () => {
+      searchAttempted.value = false; // Reset search attempt
+      if (!regex.value.trim()) {
+        alert('Please enter a valid RegEx.');
+        return;
+      }
+
       try {
-        packages.value = await byRegex(regex.value); // Call API with regex
+        const result = await byRegex(regex.value); // Call API with regex
+        packages.value = result; // Update packages
+        searchAttempted.value = true; // Indicate search completed
       } catch (error) {
         console.error('Error fetching packages:', error);
         alert('Failed to find packages. Please try again.');
       }
     };
 
-    return { regex, packages, findPackages };
+    return { regex, packages, findPackages, searchAttempted };
   },
 };
 </script>
