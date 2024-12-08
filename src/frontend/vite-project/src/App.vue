@@ -35,7 +35,7 @@
           Post Multiple Packages (post) /packages
         </button>
         <button @click="navigateTo('reset')">
-          Reset System (delete) /reset
+          Reset System
         </button>
         <button @click="navigateTo('regex')">
           Search by RegEx (get) /package/byRegEx
