@@ -17,6 +17,70 @@ if (!fs.existsSync(downloadsDir)) {
 }
 
 // GET /package/{id}
+// Download Methods
+
+// The system provides a way to download packages based on the Package ID. This ID is unique for each combination of Package Name and Version.
+
+// Required Parameters
+// Field	Description	                                                    Required?
+// ID	    Package identifier in the form <name>-ver-<version>.	          Required
+// File Structure
+
+// When a package is uploaded, it is stored in a specific directory, and its corresponding metadata is stored alongside it. The download process retrieves the zip file directly from the uploads directory.
+
+// File Naming Convention
+
+//     Package File: <package-name>-<version>.zip
+//     Metadata File: <package-name>-<version>-metadata.json
+
+// File Directory Structure
+
+// /uploads
+//   ├── test-package-1.0.0.zip
+//   ├── test-package-1.0.0-metadata.json
+//   ├── another-package-2.1.0.zip
+//   └── another-package-2.1.0-metadata.json
+
+// When a request is made for a Package ID, the server identifies the corresponding .zip file by mapping the ID to this structure.
+
+// Download Process
+
+//     Incoming Request:
+//         The server receives a GET request for /package/download/:id.
+//         The ID is extracted from the request URL.
+
+//     Package Lookup:
+//         The system searches the uploads directory for a package with a name matching ID.
+//         It looks for a file with the name format:
+
+//     <package-name>-<version>.zip
+
+// Validation:
+
+//     If no file with this name exists, a 404 Not Found error is returned.
+
+// File Delivery:
+
+//     If the file is found, the system streams the file as a binary response.
+//     The response includes appropriate Content-Type and Content-Disposition headers so the browser or client understands how to handle the file.
+// Download Endpoint:
+
+// GET /package/download/:id
+    
+// File Lookup:
+
+//     The system maps the ID to a file in the uploads directory.
+//     Example: test-package-ver-1-0-0 maps to test-package-1.0.0.zip.
+
+// Response:
+
+//     The binary ZIP file is streamed to the user as a downloadable file.
+//     Content-Type is application/zip.
+
+// Validation:
+
+//     Ensures ID format is valid.
+//     Checks for file existence.
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -363,7 +427,92 @@ router.delete('/:id', (req: Request, res: Response) => {
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
   }
   
-  // POST /package - Upload a new package
+// POST /package - Upload a new package
+// Methods of Uploading:
+// Users can upload a package using one of the following methods:
+
+// File Upload
+//     Upload the package as a physical file (like .zip, .tar, etc.).
+//     The file is stored directly in the uploads directory on the server.
+// Base64-Encoded Content
+
+//     The package is provided as a Base64-encoded string instead of a file.
+//     The Base64 string is decoded and saved as a file in the uploads directory.
+
+// URL Reference
+
+//     Instead of uploading the file directly, users provide a URL to the file location.
+//     The server downloads the file from the URL and stores it locally.
+
+// Required Fields
+
+// To upload a package, users must provide the following fields:
+// Field	                            Description	                                                      Required?
+// Name	                              Name of the package (must be unique).	                            Required
+// Version	                          Version of the package (follows Semantic Versioning like 1.0.0).	Required
+// Content / File / URL	              Package content (File, Base64, or URL).	                          One is required
+// JSProgram	                        JavaScript program logic stored with the package.	                Optional
+
+// The system expects Name and Version as required inputs. At least one of File, Content, or URL must be supplied to specify the actual package content.
+
+// Metadata
+
+// Upon successful upload, the server generates and saves a metadata file for each package. The metadata file includes key information about the package, such as:
+// Field	Description
+// Name	Name of the package.
+// Version	Version of the package.
+// ID	Unique identifier for the package version.
+// Method	Ingestion method (File, URL, or Content).
+// JSProgram	JavaScript program logic associated with the package.
+// URL	(Optional) URL from where the file was downloaded (only for URL method).
+// Metrics	(Optional) Precomputed metrics for package rating (NetScore, License, etc.).
+
+// The metadata file is stored as <package-name>-<version>-metadata.json.
+
+// File Storage
+
+//     Uploads Directory:
+//         The uploaded files are stored in the uploads directory (/uploads).
+//         Files are saved with the name <package-name>-<version>.zip for easy identification.
+
+//     Metadata Directory:
+//         The metadata for each package is stored alongside the package in uploads directory.
+//         The file is named <package-name>-<version>-metadata.json.
+
+// Validation Rules
+
+// To ensure package integrity, the following validation rules are applied:
+
+//     Package Name Check:
+//         The Name field is required and must be a valid string.
+
+//     Version Check:
+//         If Version is missing, the default is set to 1.0.0.
+//         If a package with the same Name and Version already exists, the upload is rejected.
+
+//     Content Validation:
+//         If neither Content, File, nor URL is provided, the request is rejected.
+
+//     Method Consistency:
+//         The same method (File, URL, or Content) used for the initial upload must be used for future updates of the package.
+
+//   Error Codes
+//   Status Code	Description
+//   201	Package uploaded successfully.
+//   400	Missing required fields (like Name, Version, Content, URL, etc.).
+//   403	Invalid or missing Authorization Token.
+//   404	File or URL could not be found.
+//   500	Server encountered an unexpected error.
+
+//   metadata:
+//   Name: my-package
+//   Version: 1.0.0
+//   ID: my-package-ver-1-0-0
+// data:
+//   Content: <base64-encoded content> (truncated for display)
+//   URL: https://example.com/file.zip (only if URL method used)
+//   JSProgram: |
+//     console.log('Hello, world!');
   router.post('/', upload.single('content'), async (req: Request, res: Response): Promise<void> => {
     const { Name, Version, JSProgram, URL } = req.body;
     const file = req.file;
@@ -434,6 +583,20 @@ router.delete('/:id', (req: Request, res: Response) => {
   });
   
   // post /package/:id - Update an existing package
+  // When updating a package, certain checks and rules are applied to maintain compatibility and consistency:
+
+  // Version Validation:
+  // The new version must be greater than the current version (in SemVer order).
+  // Older or same versions are rejected.
+  // Example: If current version is 1.2.0, then 1.1.9 or 1.2.0 would be rejected, but 1.2.1, 1.3.0, or 2.0.0 are acceptable.
+
+  // Ingestion Method Consistency:
+  // The method used to upload the initial package (File, URL, or Base64) must remain consistent for all future updates to the package.
+  // Example: If the first version was uploaded via URL, then all updates must also be uploaded via URL.
+
+  // Metadata Preservation:
+  // Metadata, such as package name, id, method, and optionally metrics (NetScore, license, etc.), should be preserved and updated with every new version.
+  // When updating, the existing metadata should be extended, and any newly calculated metrics should be saved.
   router.post('/:id', upload.single('content'), async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { Name, Version, JSProgram, Content, URL } = req.body;
