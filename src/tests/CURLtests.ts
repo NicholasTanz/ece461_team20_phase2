@@ -1,3 +1,20 @@
+// Runs all CURL based tests for uploading, updating, downloading, deleting, resetting, searching, and displaying packages.
+// Updating function is handled as follows:
+// When updating a package, certain checks and rules are applied to maintain compatibility and consistency:
+
+// Version Validation:
+// The new version must be greater than the current version (in SemVer order).
+// Older or same versions are rejected.
+// Example: If current version is 1.2.0, then 1.1.9 or 1.2.0 would be rejected, but 1.2.1, 1.3.0, or 2.0.0 are acceptable.
+
+// Ingestion Method Consistency:
+// The method used to upload the initial package (File, URL, or Base64) must remain consistent for all future updates to the package.
+// Example: If the first version was uploaded via URL, then all updates must also be uploaded via URL.
+
+// Metadata Preservation:
+// Metadata, such as package name, id, method, and optionally metrics (NetScore, license, etc.), should be preserved and updated with every new version.
+// When updating, the existing metadata should be extended, and any newly calculated metrics should be saved.
+
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
