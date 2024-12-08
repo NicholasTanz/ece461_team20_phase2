@@ -103,3 +103,9 @@ export async function listPackages(packageQueries: { Name: string, Version?: str
     throw error; // Rethrow error for further handling
   }
 }
+
+// /tracks (GET)
+export async function fetchTrack() {
+  const response = await axios.get(`${API_BASE}/tracks`); // Correct method
+  return response // just response for now.
+}

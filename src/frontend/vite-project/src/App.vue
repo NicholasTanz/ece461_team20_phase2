@@ -28,6 +28,9 @@
         <button @click="navigateTo('multipleOptions')">
           Package Options 
         </button>
+        <button @click="navigateTo('tracks')">
+          Tracks 
+        </button>
         <button @click="navigateTo('upload')">
           Upload a Package
         </button>
@@ -94,6 +97,9 @@ export default defineComponent({
           break;
         case "reset":
           router.push({ name: "Reset" });
+          break;
+        case "tracks":
+          router.push({ name: "Tracks" });
           break;
         default:
           alert("Invalid action");
