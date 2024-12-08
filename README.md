@@ -169,7 +169,8 @@ Measures how quickly a new developer can understand the codebase. Based on:
 -F "Name=my-package" \
 -F "Version=1.0.0" \
 -F "content=@/path/to/file.zip" \
--F "JSProgram=console.log('Hello, world!');"</code></pre>
+-F ""JSProgram": "if (process.argv.length === 7) { console.log(\"Success\"); process.exit(0); } else { console.log(\"Failed\"); process.exit(1); }"
+         }'"</code></pre>
 
 <h4>Via URL</h4>
 <pre><code>curl -X POST "http://localhost:3000/sender/package" \
