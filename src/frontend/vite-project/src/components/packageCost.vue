@@ -15,11 +15,6 @@
       <pre>{{ packageDetails }}</pre>
     </div>
 
-    <!-- Error Message -->
-    <div v-if="error">
-      <p style="color: red;">Error: {{ error }}</p>
-    </div>
-
     <!-- Loading State -->
     <div v-else-if="isLoading">
       <p>Loading...</p>
@@ -29,13 +24,9 @@
 
 <script lang="ts">
 /* 
-
 This component is responsible for the /package/:id/cost (get) endpoint. 
-
-It provides a button to search for the cost of depending on the package and displays the results.
-
+It displays the cost and additional details of a package based on the package ID.
 It utilizes the fetchPackageCost API function to make the request to the backend.
-
 */
 
 import { ref, onMounted } from 'vue';
@@ -50,23 +41,25 @@ export default {
     const cost = ref(null); // Reactive variable for the cost
     const packageDetails = ref(null); // Reactive variable for the additional package details
     const isLoading = ref(true); // Loading state
-    const error = ref<string | null>(null); // Error state
 
     // Fetch data when the component is mounted
     onMounted(async () => {
       try {
         const responseData = await fetchPackageCost(packageId); // Call the API
-        cost.value = responseData.cost || 'No cost information'; // Safely assign cost
+        cost.value = responseData.cost || 'No cost information available'; // Safely assign cost
         packageDetails.value = responseData; // Store the entire API response
       } catch (err) {
         console.error('Error fetching package cost:', err);
-        error.value = 'Failed to load package data. Please try again.';
       } finally {
         isLoading.value = false; // Set loading to false regardless of success/failure
       }
     });
 
-    return { packageId, cost, packageDetails, isLoading, error };
+    return { packageId, cost, packageDetails, isLoading };
   },
 };
 </script>
+
+<style scoped>
+/* Add any styles specific to this component */
+</style>

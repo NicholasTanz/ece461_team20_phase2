@@ -1,0 +1,46 @@
+name: Deploy with Docker-Compose
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}  # EC2 instance public IP or DNS
+          EC2_USER: ${{ secrets.EC2_USER }}  # EC2 username (e.g., "ec2-user" or "ubuntu")
+          EC2_KEY: ${{ secrets.EC2_KEY }}    # Private key for SSH, saved in GitHub Secrets
+        run: |
+          # Save the private key to a file
+          echo "${{ secrets.EC2_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+          # Ensure the SSH directory and known_hosts file exist
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
+
+          # Add EC2 host to known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+          # Create a temporary directory to package files for transfer
+          tar -czf app.tar.gz *
+
+          # Transfer files to the EC2 instance
+          scp -i private_key.pem app.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app.tar.gz
+
+          # Connect to EC2 and deploy using docker-compose
+          ssh -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          cd /home/${{ secrets.EC2_USER }}
+          tar -xzf app.tar.gz -C /home/${{ secrets.EC2_USER }}/app || mkdir -p /home/${{ secrets.EC2_USER }}/app && tar -xzf app.tar.gz -C /home/${{ secrets.EC2_USER }}/app
+          cd app
+          docker ps -aq | xargs -r docker rm -f
+          docker-compose -f docker-compose.yml up -d --build
+          EOF

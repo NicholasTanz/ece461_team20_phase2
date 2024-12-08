@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  backend:
+    container_name: backend
+    build:
+      context: .
+      dockerfile: Dockerfile  # Refers to the backend Dockerfile in the root
+    ports:
+      - "9999:9999"
+    networks:
+      - app-network
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./src/frontend/vite-project  # Refers to the frontend Dockerfile inside ./src/frontend/vite-project
+      dockerfile: Dockerfile
+    ports:
+      - "3000:5173"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
