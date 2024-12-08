@@ -8,10 +8,20 @@ import axios from 'axios';
 const API_BASE = 'http://3.84.115.237:9999'; // Corrected the API base URL
 
 // /packages (POST)
-export async function postPackage(id: string) {
-  const response = await axios.post(`${API_BASE}/packages`); // Fixed to POST
-  return response // just response for now.
+export async function postPackage(packageData: { Name: string, Version: string, URL: string, JSProgram: string }) {
+  try {
+    const response = await axios.post(`${API_BASE}/package`, packageData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response; // Return response after successful POST request
+  } catch (error) {
+    console.error("Error uploading package:", error);
+    throw error; // Propagate the error to be handled by the caller
+  }
 }
+
 
 // /packages/:id (GET)
 export async function fetchPackageById(id: string) {

@@ -29,7 +29,7 @@
           Package Options (get, put, delete) /package/:id
         </button>
         <button @click="navigateTo('upload')">
-          Post a Package (post) /package
+          Upload a Package
         </button>
         <button @click="navigateTo('manyPackages')">
           Find Multiple Packages
