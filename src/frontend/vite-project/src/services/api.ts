@@ -28,9 +28,9 @@ export async function fetchPackageById(id: string) {
   return response // just response for now.
 }
 
-// /packages/:id (PUT)
+// /packages/:id (POST)
 export async function updatePackageById(id: string, packageData: object) {
-  const response = await axios.put(`${API_BASE}/package/${id}`, packageData); // Send package data in the body
+  const response = await axios.post(`${API_BASE}/package/${id}`, packageData); // Send package data in the body
   return response; // Just response for now.
 }
 
