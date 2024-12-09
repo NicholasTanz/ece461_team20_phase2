@@ -1,3 +1,5 @@
+// npmPackageFetcher.ts: Function to fetch available versions of an npm package from the npm registry and log the results.
+
 import axios from 'axios';
 import logger from './logger';  // Import the existing logger
 

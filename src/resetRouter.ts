@@ -1,3 +1,5 @@
+// systemReset.ts: Express router to handle system reset by clearing the uploads directory via a DELETE request.
+
 import express from 'express';
 import { resetFunction } from './systemReset';
 

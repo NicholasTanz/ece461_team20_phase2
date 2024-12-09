@@ -1,3 +1,6 @@
+// packageSearcher.ts: Express router to handle package queries, search metadata, and return paginated results with validation.
+
+
 import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';

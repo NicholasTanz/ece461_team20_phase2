@@ -1,3 +1,5 @@
+// tracks.ts: Express router to retrieve and return planned tracks for students via a GET request.
+
 import { Router, Request, Response } from 'express';
 
 const router = Router();

@@ -1,3 +1,5 @@
+// packageIngestion.ts: Express router to evaluate GitHub packages by calculating metrics and determining ingestion eligibility.
+
 import { getBusFactor, cloneRepo, calculateRampUpMetric, checkLicenseCompatibility, calculateCorrectnessMetric, calculateResponsiveMaintainerMetric, calculatePinnedDependenciesMetric, calculateCodeFromPRsMetric } from './metrics';
 import { Router, Request, Response } from 'express';
 import logger from './logger';

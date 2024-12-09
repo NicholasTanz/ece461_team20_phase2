@@ -1,3 +1,9 @@
+/*
+
+routes for the frontend. 
+
+*/
+
 import { createRouter, createWebHistory } from 'vue-router';
 import PackageHandler from '../components/PackageHandler.vue';
 import resetSystem from '../components/resetSystem.vue';

@@ -1,3 +1,8 @@
+/**
+ * Handles package evaluation and rating by retrieving or computing metrics based on metadata and package URLs.  
+ * Provides a `/package/:id/rate` endpoint for fetching or updating package metrics, with caching and error handling.
+ */
+
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';

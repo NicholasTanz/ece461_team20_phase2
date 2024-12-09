@@ -1,3 +1,11 @@
+/*
+
+packageHandler.ts:
+
+for various package endpoints. Each route includes more detailed information about it and its expected behavior. 
+
+*/
+
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';

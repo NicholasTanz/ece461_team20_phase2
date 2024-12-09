@@ -1,3 +1,5 @@
+// systemReset.ts: Function to reset the uploads directory by deleting all files within it.
+
 import fs from 'fs';
 import path from 'path';
 

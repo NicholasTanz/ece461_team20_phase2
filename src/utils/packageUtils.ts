@@ -1,3 +1,5 @@
+// Code to fetch the size of an npm package using the Bundlephobia API
+
 import axios from 'axios';
 import logger from '../logger'; // Import the existing logger
 
