@@ -4,7 +4,7 @@ const router = Router();
 
 router.get('/', (req: Request, res: Response) => {
   try {
-    const plannedTracks = ["Access control track"];
+    const plannedTracks = ["High assurance track"];
     res.status(200).json({ plannedTracks });
   } catch (error) {
     console.error('Error retrieving planned tracks:', error);
