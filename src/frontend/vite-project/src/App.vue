@@ -155,7 +155,7 @@ button {
   cursor: pointer;
   border: 1px solid #ccc;
   border-radius: 5px;
-  background-color: #007BFF;
+  background-color: #000000;
   color: white;
   transition: background-color 0.3s ease;
   outline: none;
